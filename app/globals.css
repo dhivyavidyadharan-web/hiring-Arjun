@@ -87,9 +87,9 @@ tr.row:hover td { background: var(--bg); }
 .scroll { overflow-x: auto; }
 
 .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
-.SHORTLIST, .PASS, .sent { color: var(--shortlist); background: var(--shortlist-bg); }
-.REVIEW, .UNCLEAR, .sending { color: var(--review); background: var(--review-bg); }
-.DECLINE, .FLAG, .failed, .error { color: var(--decline); background: var(--decline-bg); }
+.ADVANCE, .sent { color: var(--shortlist); background: var(--shortlist-bg); }
+.HOLD, .sending, .needs_role { color: var(--review); background: var(--review-bg); }
+.DECLINE, .failed, .error { color: var(--decline); background: var(--decline-bg); }
 .draft, .processing { color: var(--unclear); background: var(--unclear-bg); }
 
 .bar { height: 6px; background: var(--border); border-radius: 3px; width: 90px; margin-top: 4px; }
@@ -106,3 +106,23 @@ tr.row:hover td { background: var(--bg); }
 .err { color: var(--decline); }
 details summary { cursor: pointer; color: var(--muted); }
 .login { max-width: 360px; margin: 14vh auto; }
+.gated { color: #fff; background: var(--review); margin-left: 4px; }
+a.btn {
+  display: inline-block; border: 1px solid var(--border); background: var(--panel); border-radius: 8px;
+  padding: 7px 12px; color: inherit; text-decoration: none;
+}
+.h2 { font-size: 15px; margin: 0 0 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 6px; white-space: nowrap; border: 1px solid transparent; }
+.chip.l5, .chip.l4 { color: var(--shortlist); background: var(--shortlist-bg); }
+.chip.l3 { color: var(--review); background: var(--review-bg); }
+.chip.l2 { color: var(--review); background: var(--review-bg); border-color: var(--review); }
+.chip.l1, .chip.l0 { color: var(--decline); background: var(--decline-bg); }
+.picker {
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  border-top: 1px solid var(--border); padding: 12px 0;
+}
+.picker > div:first-child { flex: 1 1 380px; display: grid; gap: 4px; }
+.confirm { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pass { color: var(--shortlist); font-weight: 600; }
+.fail { color: var(--decline); font-weight: 600; }

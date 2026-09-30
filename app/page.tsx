@@ -7,7 +7,7 @@ export default async function Page() {
   const { data, error } = await getDb()
     .from("candidates")
     .select("*")
-    .order("dna_score", { ascending: false, nullsFirst: false })
+    .order("score", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: true });
 
   if (error) {

@@ -56,6 +56,7 @@ export const ExtractSchema = z.object({
   email: z.string().nullable(),
   phone: z.string().nullable(),
   role_applied: z.enum(["PM", "SPM", "UNCLEAR"]),
+  role_reason: z.string(),
   anonymized_cv: z.string(),
 });
 export type Extracted = z.output<typeof ExtractSchema>;
@@ -71,22 +72,20 @@ export function extractCandidate(fileName: string, cvText: string): Promise<Extr
 
 // ---------- Step 2: blind scoring against the rubric ----------
 
-const CheckSchema = z.object({
-  check: z.string(),
-  result: z.enum(["PASS", "FLAG", "UNCLEAR"]),
-  reason: z.string(),
-});
-
-const DimSchema = z.object({
-  score: z.number().int().min(0).max(3),
+const CriterionSchema = z.object({
+  level: z.number().int().min(0).max(5),
   evidence: z.string(),
   rationale: z.string(),
 });
 
 export const ScoreSchema = z.object({
-  layer1_pm: z.array(CheckSchema),
-  layer1_spm: z.array(CheckSchema),
-  dimensions: z.object({ D1: DimSchema, D2: DimSchema, D3: DimSchema, D4: DimSchema, D5: DimSchema }),
+  a: CriterionSchema,
+  b: CriterionSchema,
+  c: CriterionSchema,
+  d: CriterionSchema,
+  e: CriterionSchema,
+  f_pm: CriterionSchema,
+  f_spm: CriterionSchema,
   summary: z.string(),
 });
 export type Scored = z.output<typeof ScoreSchema>;

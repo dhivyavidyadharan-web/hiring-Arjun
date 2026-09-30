@@ -1,4 +1,4 @@
--- Kargo hiring schema. Paste into Supabase -> SQL editor -> Run.
+-- Kargo hiring schema (rubric v2). Paste into Supabase -> SQL editor -> Run.
 -- All access goes through the Next.js server with the service-role key,
 -- so RLS is enabled with NO public policies (the anon key can read/write nothing).
 
@@ -15,24 +15,30 @@ create table if not exists candidates (
   phone             text,
 
   role_applied      text not null default 'UNCLEAR' check (role_applied in ('PM', 'SPM', 'UNCLEAR')),
+  role_reason       text,                 -- why the extractor tagged the role (shown in the role picker)
   anonymized_cv     text,                 -- the only CV text the scoring model sees
 
-  layer1_pm         jsonb,                -- [{check, result, reason}]
-  layer1_spm        jsonb,
-  dimensions        jsonb,                -- {D1..D5: {score, evidence, rationale, evidence_verified}}
-  dna_score         int check (dna_score between 0 and 100),
-  band              text check (band in ('SHORTLIST', 'REVIEW', 'DECLINE')),
+  -- Rubric v2: levels 0-5 + evidence for a-e, and role-scope fit (f) for both roles.
+  criteria          jsonb,
+  score_pm          int check (score_pm between 0 and 100),
+  score_spm         int check (score_spm between 0 and 100),
+  band_pm           text check (band_pm in ('ADVANCE', 'HOLD', 'DECLINE')),
+  band_spm          text check (band_spm in ('ADVANCE', 'HOLD', 'DECLINE')),
+  gated             boolean,              -- (a)+(b) < 15/45: capped at Hold
   summary           text,
+
+  -- Filled once the role is known (immediately, or after Arjun picks it for an UNCLEAR application).
+  target_role       text check (target_role in ('PM', 'SPM')),
+  score             int check (score between 0 and 100),
+  band              text check (band in ('ADVANCE', 'HOLD', 'DECLINE')),
   probe_questions   jsonb,
   interview_brief   text,
-
-  target_role       text check (target_role in ('PM', 'SPM')),
   invite_subject    text,
   invite_body       text,
   reject_subject    text,
   reject_body       text,
 
-  -- The system recommends. Arjun decides. Stays NULL until he clicks.
+  -- The system recommends. Arjun decides. Stays NULL until he clicks Send.
   arjun_decision    text check (arjun_decision in ('ADVANCE', 'DECLINE')),
   decided_at        timestamptz,
 
@@ -41,12 +47,13 @@ create table if not exists candidates (
   resend_id         text,
   email_error       text,
 
-  status            text not null default 'processing' check (status in ('processing', 'ready', 'error')),
+  status            text not null default 'processing' check (status in ('processing', 'needs_role', 'ready', 'error')),
   error             text,
-  model             text
+  model             text,
+  rubric_version    text
 );
 
-create index if not exists candidates_rank on candidates (dna_score desc nulls last);
+create index if not exists candidates_rank on candidates (score desc nulls last);
 
 alter table candidates enable row level security;
 -- Intentionally no policies: only the service role (server) can access this table.

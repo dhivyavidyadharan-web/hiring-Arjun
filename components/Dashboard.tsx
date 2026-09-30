@@ -1,14 +1,21 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
-  DIMENSION_KEYS,
-  DIMENSIONS,
-  LAYER1_CHECKS,
+  BAND_LABELS,
+  CRITERIA,
+  CRITERION_KEYS,
+  GATE_MAX,
+  GATE_THRESHOLD,
+  levelsFor,
+  points,
   ROLE_TITLES,
+  scoreFor,
+  suggestedRole,
   type Band,
-  type Dimensions,
-  type Layer1Check,
+  type Criteria,
+  type CriterionKey,
+  type CriterionScore,
   type Role,
 } from "@/lib/rubric";
 
@@ -19,16 +26,20 @@ export interface Candidate {
   candidate_name: string | null;
   email: string | null;
   role_applied: "PM" | "SPM" | "UNCLEAR";
+  role_reason: string | null;
   anonymized_cv: string | null;
-  layer1_pm: Layer1Check[] | null;
-  layer1_spm: Layer1Check[] | null;
-  dimensions: Dimensions | null;
-  dna_score: number | null;
-  band: Band | null;
+  criteria: Criteria | null;
+  score_pm: number | null;
+  score_spm: number | null;
+  band_pm: Band | null;
+  band_spm: Band | null;
+  gated: boolean | null;
   summary: string | null;
+  target_role: Role | null;
+  score: number | null;
+  band: Band | null;
   probe_questions: string[] | null;
   interview_brief: string | null;
-  target_role: Role | null;
   invite_subject: string | null;
   invite_body: string | null;
   reject_subject: string | null;
@@ -38,7 +49,7 @@ export interface Candidate {
   email_status: "draft" | "sending" | "sent" | "failed";
   email_sent_at: string | null;
   email_error: string | null;
-  status: "processing" | "ready" | "error";
+  status: "processing" | "needs_role" | "ready" | "error";
   error: string | null;
 }
 
@@ -46,6 +57,13 @@ type View = Role | "ALL";
 type QueueItem = { name: string; state: "waiting" | "scoring" | "done" | "error"; note?: string };
 
 const CONCURRENCY = 2;
+
+/** Score/band to show in a list: the viewed role's, or the candidate's target role in "All". */
+function shown(c: Candidate, view: View): { role: Role | null; score: number | null; band: Band | null } {
+  if (view === "PM") return { role: "PM", score: c.score_pm, band: c.band_pm };
+  if (view === "SPM") return { role: "SPM", score: c.score_spm, band: c.band_spm };
+  return { role: c.target_role, score: c.score, band: c.band };
+}
 
 export default function Dashboard({ initial }: { initial: Candidate[] }) {
   const [candidates, setCandidates] = useState(initial);
@@ -55,13 +73,9 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
   const [dragOver, setDragOver] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  // Re-render the server page so new candidates arrive in ranked order.
-  const refresh = useCallback(() => window.location.reload(), []);
-
   async function upload(files: File[]) {
     if (files.length === 0) return;
-    const items: QueueItem[] = files.map((f) => ({ name: f.name, state: "waiting" }));
-    setQueue(items);
+    setQueue(files.map((f) => ({ name: f.name, state: "waiting" })));
     const update = (i: number, patch: Partial<QueueItem>) =>
       setQueue((q) => q.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
 
@@ -74,34 +88,43 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
         body.append("file", files[i]);
         try {
           const res = await fetch("/api/upload", { method: "POST", body });
-          const json = (await res.json()) as { error?: string; dna_score?: number; band?: string };
+          const json = (await res.json()) as { error?: string; score?: number | null; band?: Band | null; role?: string };
           if (!res.ok) update(i, { state: "error", note: json.error });
-          else update(i, { state: "done", note: `DNA ${json.dna_score} · ${json.band}` });
+          else if (json.role === "UNCLEAR") update(i, { state: "done", note: "role unclear: pick it below" });
+          else update(i, { state: "done", note: `${json.score}/100 · ${json.band ? BAND_LABELS[json.band] : ""}` });
         } catch (e) {
           update(i, { state: "error", note: String(e) });
         }
       }
     }
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, files.length) }, worker));
-    refresh();
+    // Re-render the server page so new candidates arrive in ranked order.
+    window.location.reload();
   }
 
-  const visible = useMemo(() => {
-    return candidates.filter((c) => view === "ALL" || c.role_applied === view || c.role_applied === "UNCLEAR");
+  const needsRole = candidates.filter((c) => c.status === "needs_role");
+  const ranked = useMemo(() => {
+    const list = candidates.filter(
+      (c) => c.status !== "needs_role" && (view === "ALL" || c.role_applied === view || c.status !== "ready"),
+    );
+    return [...list].sort((x, y) => (shown(y, view).score ?? -1) - (shown(x, view).score ?? -1));
   }, [candidates, view]);
 
   const ready = candidates.filter((c) => c.status === "ready");
   const stats = {
     total: candidates.length,
-    shortlist: ready.filter((c) => c.band === "SHORTLIST").length,
-    review: ready.filter((c) => c.band === "REVIEW").length,
+    advance: ready.filter((c) => c.band === "ADVANCE").length,
+    hold: ready.filter((c) => c.band === "HOLD").length,
     decline: ready.filter((c) => c.band === "DECLINE").length,
-    decided: candidates.filter((c) => c.arjun_decision).length,
+    needsRole: needsRole.length,
     sent: candidates.filter((c) => c.email_status === "sent").length,
   };
 
   function patchLocal(id: string, patch: Partial<Candidate>) {
     setCandidates((cs) => cs.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  }
+  function removeLocal(id: string) {
+    setCandidates((cs) => cs.filter((c) => c.id !== id));
   }
 
   return (
@@ -113,17 +136,22 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
             The system recommends. You decide. No email goes out until you click Send.
           </div>
         </div>
-        <form action="/api/logout" method="post">
-          <button>Sign out</button>
-        </form>
+        <div className="actions">
+          <a className="btn" href="/calibration">
+            Calibration
+          </a>
+          <form action="/api/logout" method="post">
+            <button>Sign out</button>
+          </form>
+        </div>
       </div>
 
       <div className="stats">
         <Stat label="Candidates" value={stats.total} />
-        <Stat label="Shortlist (75+)" value={stats.shortlist} />
-        <Stat label="Review (50-74)" value={stats.review} />
-        <Stat label="Decline (<50)" value={stats.decline} />
-        <Stat label="Decided" value={stats.decided} />
+        <Stat label="Advance (70+)" value={stats.advance} />
+        <Stat label="Hold (40-69 / gated)" value={stats.hold} />
+        <Stat label="Decline (<40)" value={stats.decline} />
+        <Stat label="Need a role" value={stats.needsRole} />
         <Stat label="Emails sent" value={stats.sent} />
       </div>
 
@@ -145,7 +173,7 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
             <b>Upload CVs</b> for Product Manager or Senior Product Manager (PDF, DOCX, TXT)
           </p>
           <p className="muted small" style={{ margin: "0 0 10px" }}>
-            Contact details are removed before scoring. Every candidate is scored against both roles.
+            Personal details are removed before scoring. Every candidate is scored for both roles.
           </p>
           <input
             ref={fileInput}
@@ -163,7 +191,7 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
           <ul className="queue">
             {queue.map((q, i) => (
               <li key={i}>
-                <span className={`pill ${q.state === "done" ? "sent" : q.state === "error" ? "error" : "draft"}`}>
+                <span className={`pill ${q.state === "done" ? "ADVANCE" : q.state === "error" ? "DECLINE" : "draft"}`}>
                   {q.state}
                 </span>{" "}
                 {q.name} {q.note && <span className="muted">· {q.note}</span>}
@@ -173,6 +201,18 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
         )}
       </section>
 
+      {needsRole.length > 0 && (
+        <section className="panel">
+          <h2 className="h2">Pending scoring: role unclear ({needsRole.length})</h2>
+          <p className="muted small" style={{ marginTop: 0 }}>
+            Both roles are already scored. Pick the role this person applied for, and the brief and email drafts will be written for it.
+          </p>
+          {needsRole.map((c) => (
+            <RolePicker key={c.id} c={c} onDone={(patch) => patchLocal(c.id, patch)} onDelete={() => removeLocal(c.id)} />
+          ))}
+        </section>
+      )}
+
       <section className="panel">
         <div className="tabs">
           {(["ALL", "PM", "SPM"] as View[]).map((v) => (
@@ -181,28 +221,26 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
             </button>
           ))}
         </div>
-        {view !== "ALL" && (
-          <p className="muted small" style={{ marginTop: 0 }}>
-            Showing people who applied for {ROLE_TITLES[view]}, plus unclear applications. Layer 1 flags are shown for
-            this role.
-          </p>
-        )}
+        <p className="muted small" style={{ marginTop: 0 }}>
+          {view === "ALL"
+            ? "Ranked by each candidate's score for the role they applied for."
+            : `People who applied for ${ROLE_TITLES[view]}, ranked by their ${view} score (role-scope fit is scored for ${view}).`}
+        </p>
         <div className="scroll">
           <table>
             <thead>
               <tr>
                 <th>#</th>
                 <th>Candidate</th>
-                <th>Applied</th>
-                <th>DNA score</th>
+                <th>Role</th>
+                <th>Score</th>
                 <th>Band</th>
-                <th>D1 D2 D3 D4 D5</th>
-                <th>Role fit ({view === "ALL" ? "target" : view})</th>
+                <th>Criteria (level 0-5)</th>
                 <th>Decision</th>
               </tr>
             </thead>
             <tbody>
-              {visible.map((c, i) => (
+              {ranked.map((c, i) => (
                 <Row
                   key={c.id}
                   rank={i + 1}
@@ -211,12 +249,12 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
                   open={openId === c.id}
                   onToggle={() => setOpenId(openId === c.id ? null : c.id)}
                   onPatch={(p) => patchLocal(c.id, p)}
-                  onDelete={() => setCandidates((cs) => cs.filter((x) => x.id !== c.id))}
+                  onDelete={() => removeLocal(c.id)}
                 />
               ))}
-              {visible.length === 0 && (
+              {ranked.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="muted">
+                  <td colSpan={7} className="muted">
                     No candidates yet. Upload CVs above.
                   </td>
                 </tr>
@@ -238,8 +276,89 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function checksFor(c: Candidate, role: Role) {
-  return (role === "PM" ? c.layer1_pm : c.layer1_spm) ?? [];
+function BandPill({ band, gated }: { band: Band | null; gated: boolean | null }) {
+  if (!band) return null;
+  return (
+    <>
+      <span className={`pill ${band}`}>{BAND_LABELS[band]}</span>
+      {gated && (
+        <span className="pill gated" title={`(a)+(b) below ${GATE_THRESHOLD}/${GATE_MAX}: capped at Hold`}>
+          gated
+        </span>
+      )}
+    </>
+  );
+}
+
+function Chips({ criteria, role }: { criteria: Criteria; role: Role }) {
+  const levels = levelsFor(criteria, role);
+  return (
+    <div className="chips">
+      {CRITERION_KEYS.map((k) => (
+        <span key={k} className={`chip l${levels[k]}`} title={`${CRITERIA[k].name}: level ${levels[k]}/5`}>
+          {k} {CRITERIA[k].short} <b>{levels[k]}</b>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function RolePicker({
+  c,
+  onDone,
+  onDelete,
+}: {
+  c: Candidate;
+  onDone: (p: Partial<Candidate>) => void;
+  onDelete: () => void;
+}) {
+  const [busy, setBusy] = useState<Role | null>(null);
+  const [err, setErr] = useState("");
+  const suggestion = c.criteria ? suggestedRole(c.criteria) : null;
+
+  async function pick(role: Role) {
+    setBusy(role);
+    setErr("");
+    const res = await fetch(`/api/candidates/${c.id}/role`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role }),
+    });
+    setBusy(null);
+    if (!res.ok) {
+      setErr(((await res.json().catch(() => ({}))) as { error?: string }).error ?? "Failed");
+      return;
+    }
+    // Reload so the brief and drafts written by the server arrive.
+    onDone({ status: "ready", role_applied: role, target_role: role });
+    window.location.reload();
+  }
+
+  return (
+    <div className="picker">
+      <div>
+        <b>{c.candidate_name ?? "(name not found)"}</b> <span className="muted small">· {c.candidate_file}</span>
+        <div className="small">
+          <span className="muted">Why unclear:</span> {c.role_reason ?? "no reason recorded"}
+        </div>
+        <div className="small muted">
+          PM score {c.score_pm ?? "–"} ({c.band_pm ? BAND_LABELS[c.band_pm] : "–"}) · SPM score {c.score_spm ?? "–"} (
+          {c.band_spm ? BAND_LABELS[c.band_spm] : "–"}){c.gated ? " · gated" : ""}
+          {suggestion && ` · better fit: ${suggestion}`}
+        </div>
+        {c.criteria && <Chips criteria={c.criteria} role={suggestion ?? "PM"} />}
+      </div>
+      <div className="actions">
+        {(["PM", "SPM"] as Role[]).map((r) => (
+          <button key={r} className={r === suggestion ? "primary" : ""} disabled={busy !== null} onClick={() => void pick(r)}>
+            {busy === r ? "Writing brief…" : `Assign ${ROLE_TITLES[r]}`}
+          </button>
+        ))}
+        <DeleteButton id={c.id} onDelete={onDelete} />
+      </div>
+      {err && <p className="err">{err}</p>}
+    </div>
+  );
 }
 
 function Row(props: {
@@ -252,10 +371,7 @@ function Row(props: {
   onDelete: () => void;
 }) {
   const { c, view } = props;
-  const role: Role = view === "ALL" ? (c.target_role ?? "PM") : view;
-  const checks = checksFor(c, role);
-  const flags = checks.filter((x) => x.result === "FLAG").length;
-  const unclear = checks.filter((x) => x.result === "UNCLEAR").length;
+  const s = shown(c, view);
 
   return (
     <>
@@ -267,34 +383,25 @@ function Row(props: {
         </td>
         <td>{c.role_applied}</td>
         <td>
-          {c.status === "ready" ? (
+          {c.status === "ready" && s.score !== null ? (
             <>
-              <b>{c.dna_score}</b>
+              <b>{s.score}</b>
               <div className="bar">
-                <i style={{ width: `${c.dna_score ?? 0}%` }} />
+                <i style={{ width: `${s.score}%` }} />
               </div>
             </>
           ) : (
             <span className={`pill ${c.status}`}>{c.status}</span>
           )}
         </td>
-        <td>{c.band && <span className={`pill ${c.band}`}>{c.band}</span>}</td>
-        <td className="dots">
-          {c.dimensions ? DIMENSION_KEYS.map((k) => c.dimensions![k].score).join("  ") : ""}
+        <td>
+          <BandPill band={s.band} gated={c.gated} />
         </td>
-        <td className="small">
-          {c.status === "ready" && (
-            <>
-              {role}: {flags > 0 && <span className="pill FLAG">{flags} flag</span>}{" "}
-              {unclear > 0 && <span className="pill UNCLEAR">{unclear} unclear</span>}
-              {flags === 0 && unclear === 0 && <span className="pill PASS">pass</span>}
-            </>
-          )}
-        </td>
+        <td>{c.criteria && s.role && <Chips criteria={c.criteria} role={s.role} />}</td>
         <td>
           {c.arjun_decision ? (
             <span className={`pill ${c.email_status}`}>
-              {c.arjun_decision === "ADVANCE" ? "Advance" : "Decline"} · {c.email_status}
+              {c.arjun_decision === "ADVANCE" ? "Invited" : "Declined"} · {c.email_status}
             </span>
           ) : (
             <span className="muted small">awaiting you</span>
@@ -303,12 +410,34 @@ function Row(props: {
       </tr>
       {props.open && (
         <tr>
-          <td colSpan={8}>
+          <td colSpan={7}>
             <Detail c={c} onPatch={props.onPatch} onDelete={props.onDelete} />
           </td>
         </tr>
       )}
     </>
+  );
+}
+
+function CriterionRow({ k, c, role }: { k: CriterionKey; c: CriterionScore; role?: Role }) {
+  return (
+    <tr>
+      <td style={{ width: 90 }}>
+        <b>({k})</b> {role && <span className="small muted">{role}</span>}
+        <div className="small muted">
+          {points(k, c.level)}/{CRITERIA[k].weight} pts
+        </div>
+      </td>
+      <td>
+        <span className={`chip l${c.level}`}>
+          <b>{c.level}/5</b>
+        </span>{" "}
+        {CRITERIA[k].name}
+        <div className="quote">{c.evidence}</div>
+        {c.evidence_verified === false && <span className="pill DECLINE">quote not found in CV, check it</span>}
+        <div className="muted small">{c.rationale}</div>
+      </td>
+    </tr>
   );
 }
 
@@ -329,9 +458,12 @@ function Detail({
       </div>
     );
   }
-  if (c.status !== "ready" || !c.dimensions) {
+  if (c.status !== "ready" || !c.criteria || !c.target_role) {
     return <p className="muted">Still processing… refresh in a minute.</p>;
   }
+  const role = c.target_role;
+  const r = scoreFor(c.criteria, role);
+  const other: Role = role === "PM" ? "SPM" : "PM";
 
   return (
     <div className="detail">
@@ -339,57 +471,32 @@ function Detail({
         <h3>Summary</h3>
         <p style={{ marginTop: 0 }}>{c.summary}</p>
 
-        <h3>Kargo DNA · {c.dna_score}/100</h3>
+        <h3>
+          Rubric v2 · {ROLE_TITLES[role]} · {r.total}/100 · {BAND_LABELS[r.band]}
+        </h3>
+        <p className="small" style={{ marginTop: 0 }}>
+          Gate (a)+(b): <b>{r.gateScore}</b>/{GATE_MAX}{" "}
+          {r.gated ? (
+            <span className="pill gated">below {GATE_THRESHOLD}, capped at Hold</span>
+          ) : (
+            <span className="muted">passes</span>
+          )}
+          <span className="muted">
+            {" "}
+            · {ROLE_TITLES[other]} score: {other === "PM" ? c.score_pm : c.score_spm}
+          </span>
+        </p>
         <table>
           <tbody>
-            {DIMENSION_KEYS.map((k) => {
-              const d = c.dimensions![k];
-              return (
-                <tr key={k}>
-                  <td style={{ width: 60 }}>
-                    <b>{k}</b>
-                    <div className="small muted">w{DIMENSIONS[k].weight}</div>
-                  </td>
-                  <td>
-                    <b>{d.score}/3</b> · {DIMENSIONS[k].name}
-                    <div className="quote">{d.evidence}</div>
-                    {d.evidence_verified === false && (
-                      <span className="pill FLAG">quote not found in CV, check it</span>
-                    )}
-                    <div className="muted small">{d.rationale}</div>
-                  </td>
-                </tr>
-              );
-            })}
+            {(["a", "b", "c", "d", "e"] as const).map((k) => (
+              <CriterionRow key={k} k={k} c={c.criteria![k]} />
+            ))}
+            <CriterionRow k="f" c={c.criteria.f_pm} role="PM" />
+            <CriterionRow k="f" c={c.criteria.f_spm} role="SPM" />
           </tbody>
         </table>
 
-        <h3 style={{ marginTop: 16 }}>Layer 1 · Role fit (flags never auto-reject)</h3>
-        {(["PM", "SPM"] as Role[]).map((role) => (
-          <div key={role} style={{ marginBottom: 10 }}>
-            <b className="small">{ROLE_TITLES[role]}</b>
-            <table>
-              <tbody>
-                {checksFor(c, role).map((chk) => (
-                  <tr key={chk.check}>
-                    <td style={{ width: 60 }}>{chk.check}</td>
-                    <td style={{ width: 80 }}>
-                      <span className={`pill ${chk.result}`}>{chk.result}</span>
-                    </td>
-                    <td className="small">
-                      <span className="muted">
-                        {LAYER1_CHECKS[role].find((x) => x.check === chk.check)?.label}
-                      </span>
-                      <div>{chk.reason}</div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ))}
-
-        <details>
+        <details style={{ marginTop: 12 }}>
           <summary>Anonymised CV (exactly what the scorer saw)</summary>
           <pre className="brief small">{c.anonymized_cv}</pre>
         </details>
@@ -399,22 +506,53 @@ function Detail({
         <h3>Interview brief</h3>
         <pre className="brief">{c.interview_brief}</pre>
         <EmailPanel c={c} onPatch={onPatch} />
-        <p style={{ marginTop: 16 }}>
+        <div className="actions" style={{ marginTop: 16 }}>
+          <ChangeRole c={c} to={other} />
           <DeleteButton id={c.id} onDelete={onDelete} />
-        </p>
+        </div>
       </div>
     </div>
   );
 }
 
+function ChangeRole({ c, to }: { c: Candidate; to: Role }) {
+  const [busy, setBusy] = useState(false);
+  if (c.email_status === "sent" || c.email_status === "sending") return null;
+  return (
+    <button
+      className="small"
+      disabled={busy}
+      onClick={async () => {
+        if (!confirm(`Re-target this candidate to ${ROLE_TITLES[to]}? The brief and drafts will be rewritten.`)) return;
+        setBusy(true);
+        const res = await fetch(`/api/candidates/${c.id}/role`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: to }),
+        });
+        if (res.ok) window.location.reload();
+        else {
+          setBusy(false);
+          alert(((await res.json().catch(() => ({}))) as { error?: string }).error ?? "Failed");
+        }
+      }}
+    >
+      {busy ? "Rewriting…" : `Switch to ${to}`}
+    </button>
+  );
+}
+
 function EmailPanel({ c, onPatch }: { c: Candidate; onPatch: (p: Partial<Candidate>) => void }) {
-  const [tab, setTab] = useState<"invite" | "reject">(c.arjun_decision === "DECLINE" ? "reject" : c.band === "DECLINE" ? "reject" : "invite");
+  const [tab, setTab] = useState<"invite" | "reject">(
+    c.arjun_decision === "DECLINE" || (c.arjun_decision === null && c.band === "DECLINE") ? "reject" : "invite",
+  );
   const [email, setEmail] = useState(c.email ?? "");
   const [inviteSubject, setInviteSubject] = useState(c.invite_subject ?? "");
   const [inviteBody, setInviteBody] = useState(c.invite_body ?? "");
   const [rejectSubject, setRejectSubject] = useState(c.reject_subject ?? "");
   const [rejectBody, setRejectBody] = useState(c.reject_body ?? "");
   const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState<"ADVANCE" | "DECLINE" | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const locked = c.email_status === "sent" || c.email_status === "sending";
@@ -447,8 +585,7 @@ function EmailPanel({ c, onPatch }: { c: Candidate; onPatch: (p: Partial<Candida
   }
 
   async function send(decision: "ADVANCE" | "DECLINE") {
-    const what = decision === "ADVANCE" ? "the interview invitation" : "the rejection email";
-    if (!confirm(`Record your decision (${decision}) and send ${what} to ${email}?`)) return;
+    setConfirming(null);
     setBusy(true);
     setMsg(null);
     try {
@@ -471,6 +608,31 @@ function EmailPanel({ c, onPatch }: { c: Candidate; onPatch: (p: Partial<Candida
     }
   }
 
+  const sendButton = (decision: "ADVANCE" | "DECLINE") =>
+    confirming === decision ? (
+      <span className="confirm">
+        Send to <b>{email}</b>?{" "}
+        <button className={decision === "ADVANCE" ? "primary" : "danger"} onClick={() => void send(decision)}>
+          Yes, send
+        </button>{" "}
+        <button onClick={() => setConfirming(null)}>Cancel</button>
+      </span>
+    ) : (
+      <button
+        className={decision === "ADVANCE" ? "primary" : "danger"}
+        disabled={busy || !email}
+        onClick={() => setConfirming(decision)}
+      >
+        {busy ? "Sending…" : decision === "ADVANCE" ? "Invite to interview" : "Send rejection"}
+      </button>
+    );
+
+  const saveButton = dirty && (
+    <button disabled={busy} onClick={() => void save().then((ok) => ok && setMsg({ ok: true, text: "Saved." }))}>
+      Save draft
+    </button>
+  );
+
   return (
     <div style={{ marginTop: 16 }}>
       <h3>Draft emails</h3>
@@ -481,57 +643,43 @@ function EmailPanel({ c, onPatch }: { c: Candidate; onPatch: (p: Partial<Candida
           {c.email_sent_at && ` on ${new Date(c.email_sent_at).toLocaleString()}`}.
         </p>
       ) : (
-        <>
+        <div className="email">
           {c.email_status === "failed" && <p className="err">Last send failed: {c.email_error}</p>}
-          <div className="email">
-            <label className="small muted">
-              To
-              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="candidate@email.com" />
-            </label>
-            <div className="tabs" style={{ marginBottom: 0 }}>
-              <button aria-pressed={tab === "invite"} onClick={() => setTab("invite")}>
-                Interview invite
-              </button>
-              <button aria-pressed={tab === "reject"} onClick={() => setTab("reject")}>
-                Rejection
-              </button>
-            </div>
-            {tab === "invite" ? (
-              <>
-                <input value={inviteSubject} onChange={(e) => setInviteSubject(e.target.value)} />
-                <textarea value={inviteBody} onChange={(e) => setInviteBody(e.target.value)} />
-                <div className="actions">
-                  <button className="primary" disabled={busy || !email} onClick={() => void send("ADVANCE")}>
-                    {busy ? "Sending…" : "Advance & send invite"}
-                  </button>
-                  {dirty && (
-                    <button disabled={busy} onClick={() => void save().then((ok) => ok && setMsg({ ok: true, text: "Saved." }))}>
-                      Save draft
-                    </button>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="muted small" style={{ margin: 0 }}>
-                  Rejections name nobody (no candidate name, no Kargo staff) and never mention scores.
-                </p>
-                <input value={rejectSubject} onChange={(e) => setRejectSubject(e.target.value)} />
-                <textarea value={rejectBody} onChange={(e) => setRejectBody(e.target.value)} />
-                <div className="actions">
-                  <button className="danger" disabled={busy || !email} onClick={() => void send("DECLINE")}>
-                    {busy ? "Sending…" : "Decline & send rejection"}
-                  </button>
-                  {dirty && (
-                    <button disabled={busy} onClick={() => void save().then((ok) => ok && setMsg({ ok: true, text: "Saved." }))}>
-                      Save draft
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
+          <label className="small muted">
+            To
+            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="candidate@email.com" />
+          </label>
+          <div className="tabs" style={{ marginBottom: 0 }}>
+            <button aria-pressed={tab === "invite"} onClick={() => setTab("invite")}>
+              Interview invite
+            </button>
+            <button aria-pressed={tab === "reject"} onClick={() => setTab("reject")}>
+              Rejection
+            </button>
           </div>
-        </>
+          {tab === "invite" ? (
+            <>
+              <input value={inviteSubject} onChange={(e) => setInviteSubject(e.target.value)} />
+              <textarea value={inviteBody} onChange={(e) => setInviteBody(e.target.value)} />
+              <div className="actions">
+                {sendButton("ADVANCE")}
+                {saveButton}
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="muted small" style={{ margin: 0 }}>
+                Rejections name nobody (no candidate name, no Kargo staff) and never mention scores.
+              </p>
+              <input value={rejectSubject} onChange={(e) => setRejectSubject(e.target.value)} />
+              <textarea value={rejectBody} onChange={(e) => setRejectBody(e.target.value)} />
+              <div className="actions">
+                {sendButton("DECLINE")}
+                {saveButton}
+              </div>
+            </>
+          )}
+        </div>
       )}
       {msg && <p className={msg.ok ? "muted" : "err"}>{msg.text}</p>}
     </div>
@@ -548,7 +696,7 @@ function DeleteButton({ id, onDelete }: { id: string; onDelete: () => void }) {
         if (res.ok) onDelete();
       }}
     >
-      Remove candidate
+      Remove
     </button>
   );
 }

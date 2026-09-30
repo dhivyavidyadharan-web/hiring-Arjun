@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { ACCEPTED_EXTENSIONS, extractText } from "@/lib/parse";
-import { processCv } from "@/lib/pipeline";
+import { draftFor, scoreCv } from "@/lib/pipeline";
 
 export const runtime = "nodejs";
 // Three model calls per CV; give the function room.
@@ -34,13 +34,22 @@ export async function POST(req: Request) {
 
   try {
     const text = await extractText(name, await file.arrayBuffer());
-    const result = await processCv(name, text);
+    const scored = await scoreCv(name, text);
+
+    // UNCLEAR role: stop here. Arjun picks the role on the dashboard, then the brief and drafts are written.
+    const drafts = scored.role_applied === "UNCLEAR" ? null : await draftFor(scored, scored.role_applied);
     const { error } = await db
       .from("candidates")
-      .update({ ...result, status: "ready", error: null })
+      .update({ ...scored, ...(drafts ?? {}), status: drafts ? "ready" : "needs_role", error: null })
       .eq("id", row.id);
     if (error) throw new Error(error.message);
-    return NextResponse.json({ id: row.id, dna_score: result.dna_score, band: result.band });
+
+    return NextResponse.json({
+      id: row.id,
+      role: scored.role_applied,
+      score: drafts?.score ?? null,
+      band: drafts?.band ?? null,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     await db.from("candidates").update({ status: "error", error: message }).eq("id", row.id);
