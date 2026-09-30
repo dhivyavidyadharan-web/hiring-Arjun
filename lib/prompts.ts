@@ -138,6 +138,7 @@ Write two things.
 
 1. "interview_brief": a scannable brief in plain text with these headings, each on its own line followed by short lines or "- " bullets:
    WHO THEY ARE (2 lines, professional background only)
+   Always refer to criteria by the exact names in "criterion_names", e.g. "(a) Operational domain fluency". Never invent labels.
    WHY THEY SCORED HERE (reference the total and band; name the 2 strongest criteria with the quoted evidence; if the gate triggered, say so plainly)
    GAPS (the weakest criteria and any role-fit gap for the target role; be specific and fair)
    WHAT TO PROBE (the two probe questions provided, each followed by one line on what a strong answer would contain for this person)

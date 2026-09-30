@@ -2,6 +2,7 @@ import { extractCandidate, MODEL, scoreCandidate, writeBrief, type Scored } from
 import { finaliseInvite, inviteSubject, rejectBody, rejectSubject } from "./emails";
 import { redact } from "./redact";
 import {
+  CRITERIA,
   evidenceAppearsIn,
   probeQuestions,
   ROLE_TITLES,
@@ -122,6 +123,7 @@ export async function draftFor(
     targetRoleTitle: ROLE_TITLES[role],
     scoringJson: JSON.stringify(
       {
+        criterion_names: Object.fromEntries(Object.entries(CRITERIA).map(([k, v]) => [k, `(${k}) ${v.name}`])),
         total: result.total,
         band: result.band,
         gate: { a_plus_b_points: result.gateScore, of: 45, triggered: result.gated },
