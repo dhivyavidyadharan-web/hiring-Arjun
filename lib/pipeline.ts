@@ -1,4 +1,4 @@
-import { extractCandidate, MODEL, scoreCandidate, writeBrief, type Scored } from "./claude";
+import { extractCandidate, MODEL, scoreCandidate, writeBrief, type Scored } from "./llm";
 import { finaliseInvite, inviteSubject, rejectBody, rejectSubject } from "./emails";
 import { redact } from "./redact";
 import {

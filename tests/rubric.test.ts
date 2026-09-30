@@ -150,3 +150,12 @@ describe("calibration checks", () => {
     expect(checkCalibration(t, scoreLevels(L(5, 5, 5, 5, 5, 5), "PM")).pass).toBe(false);
   });
 });
+
+describe("Gemini response schema", () => {
+  it("is plain JSON Schema with the rubric fields and no $schema marker", async () => {
+    const { jsonSchemaFor, ScoreSchema } = await import("../lib/llm");
+    const s = jsonSchemaFor(ScoreSchema) as { $schema?: string; properties: Record<string, unknown>; required: string[] };
+    expect(s.$schema).toBeUndefined();
+    expect(s.required).toEqual(expect.arrayContaining(["a", "b", "c", "d", "e", "f_pm", "f_spm", "summary"]));
+  });
+});

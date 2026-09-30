@@ -15,8 +15,8 @@ an interview brief and drafts an invitation and a rejection for each person. **N
 | **Trigger** | Arjun uploads one or more CVs (PDF / DOCX / TXT) | `components/Dashboard.tsx` → `POST /api/upload` |
 | **Input** | File → plain text | `lib/parse.ts` |
 | **Context** | Rubric v2: six weighted criteria, the (a)+(b) gate, bands, and the two JDs | `RUBRIC.md`, `lib/prompts.ts`, `lib/rubric.ts` |
-| **Processing** | ① Claude pulls out name, email and phone, tags the role (with a reason), and **anonymises** the CV. ② A code-level redaction pass catches anything missed. | `lib/claude.ts`, `lib/redact.ts` |
-| **AI** | ③ **Blind scoring** of the anonymised text only. It returns levels 0–5 with a verbatim quote for (a)–(e), plus (f) role-scope fit for **both** PM and SPM. ④ Claude writes the interview brief and a personalised invitation draft. | `lib/claude.ts`, `lib/pipeline.ts` |
+| **Processing** | ① Gemini (Flash) pulls out name, email and phone, tags the role (with a reason), and **anonymises** the CV. ② A code-level redaction pass catches anything missed. | `lib/llm.ts`, `lib/redact.ts` |
+| **AI** | ③ **Blind scoring** of the anonymised text only, by Gemini (Pro). It returns levels 0–5 with a verbatim quote for (a)–(e), plus (f) role-scope fit for **both** PM and SPM. ④ Gemini (Flash) writes the interview brief and a personalised invitation draft. | `lib/llm.ts`, `lib/pipeline.ts` |
 | **Output** | Code computes points, totals for both roles, the gate, the band (Advance ≥70 / Hold / Decline <40) and two probe questions, and checks that every quote really is in the CV. The dashboard ranks candidates for each role and shows all six criteria as chips. | `lib/rubric.ts`, `app/page.tsx` |
 | **Action (human)** | Arjun clicks **Invite to interview** or **Send rejection**, then confirms with **Yes, send**. This records `arjun_decision` and sends through **Resend**. | `POST /api/candidates/:id/send` |
 
@@ -61,7 +61,7 @@ npm run dev
 2. **Resend:** set `RESEND_API_KEY`. For testing, keep `EMAIL_FROM="Kargo Hiring <onboarding@resend.dev>"` and set
    `EMAIL_TEST_RECIPIENT` to your Resend signup email. The sandbox sender can only deliver there. For real candidates,
    verify a domain in Resend and change `EMAIL_FROM`.
-3. **Claude:** set `ANTHROPIC_API_KEY`. The default model is `claude-opus-5`, with server-side refusal fallback on.
+3. **Gemini:** set `GEMINI_API_KEY` (free at https://aistudio.google.com/apikey). Scoring uses `gemini-pro-latest` and the lighter steps use `gemini-flash-latest`. Override them with `GEMINI_MODEL` / `GEMINI_FAST_MODEL`.
 4. **Login:** set `ADMIN_PASSWORD` and `SESSION_SECRET` (32+ random characters).
 5. **Calibrate** at `/calibration` before you score real applicants.
 
@@ -86,7 +86,7 @@ components/Dashboard.tsx                upload, role picker, role tabs, ranking 
 lib/
   rubric.ts      weights, points, gate, bands, probes, evidence check, calibration targets
   prompts.ts     extraction / scoring / brief prompts (rubric v2 text)
-  claude.ts      Claude calls with structured (zod) outputs
+  llm.ts         Gemini calls with structured (zod → JSON Schema) outputs
   pipeline.ts    scoreCv() and draftFor(role)
   redact.ts      code-level PII redaction
   emails.ts      invite finalisation, fixed rejection template, rejection guardrail
