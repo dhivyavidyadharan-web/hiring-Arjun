@@ -36,7 +36,7 @@ Use only evidence written in the CV. If there is none, the level is 0 and the ev
 
 **(a) Operational domain fluency**
 - 5 = Did the operational work themselves in freight, logistics or supply chain (documentation, dispatch, customs, port/terminal work, carrier allocation and exceptions, warehouse) for a sustained period (~2+ years), with specifics
-- 4 = Hands-on ops, but shorter, or in a comparable ops-heavy field (manufacturing floor, field ops, on-ground fulfilment)
+- 4 = Hands-on ops, but shorter, or in a comparable ops-heavy field (manufacturing floor, field ops, on-ground fulfilment), or commercial / client roles inside a port, terminal, forwarder or 3PL that personally handled live ops issues (berth allocation, detention, escalations)
 - 3 = Adjacent: supply chain planning or analytics with daily exposure to live ops, or worked physically alongside ops teams
 - 2 = Built products for operators with sustained direct contact (site visits, shadowing)
 - 1 = Knows ops from a distance: integrations, dashboards, occasional interviews
@@ -53,6 +53,8 @@ Use only evidence written in the CV. If there is none, the level is 0 and the ev
 - 0 = None
 
 **(c) Shipped-and-measured outcomes**
+*Any function counts: features, deals closed, accounts retained, migrations run. A post-mortem on their own miss that changed team practice counts as acting on the data.*
+
 - 5 = Multiple shipped things with tracked metrics, **and** killed or changed something because of the data
 - 4 = Shipped with specific numbers
 - 3 = Shipped; outcomes vague

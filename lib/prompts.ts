@@ -54,7 +54,9 @@ Has this person done operational work themselves, close to where goods physicall
       customs, port or terminal work, carrier allocation and exceptions, warehouse) for a sustained period (~2+ years),
       with specifics (volumes, shipments/day, clients handled).
   4 = Hands-on operational work, but shorter, or in a comparable ops-heavy field (manufacturing floor, field operations,
-      on-ground fulfilment, hospital / airline / utility operations).
+      on-ground fulfilment, hospital / airline / utility operations). ALSO 4: client-facing or commercial roles inside a
+      port, terminal, forwarder, carrier or 3PL where they personally handled live operational issues (berth allocation,
+      detention and demurrage, shipment escalations, documentation corrections, exceptions) for a sustained period.
   3 = Adjacent operations: supply chain planning or analytics with daily exposure to live ops, or worked physically
       alongside ops teams (on site during rollouts, in the room at peak).
   2 = Built products for operators with sustained direct contact (site visits, shadowing, regular sessions with ops users).
@@ -80,6 +82,8 @@ Did they create something that did not exist in their organisation, on their own
 
 (c) SHIPPED-AND-MEASURED OUTCOMES   (weight 15)
 Did they ship, measure what happened, and act on the measurement?
+  "Shipped" means delivered work with a result, in any function: features, deals closed, accounts retained, migrations run.
+  A post-mortem on their own loss or miss that changed how the team works counts as acting on the measurement.
   5 = Multiple shipped things with specific measured results they tracked, AND evidence of killing or changing
       something because of the data (killed features on usage data, post-mortem that changed practice).
   4 = Shipped things with specific numeric outcomes.
