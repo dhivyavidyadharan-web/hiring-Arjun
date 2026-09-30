@@ -63,18 +63,19 @@ Has this person done operational work themselves, close to where goods physicall
   Score proximity to operational WORK, not "worked at a freight company".
 
 (b) ZERO-TO-ONE OWNERSHIP   (weight 20)
-Did they create something that did not exist in their organisation, on their own initiative, beyond their normal job, and own it?
-  5 = Created something genuinely new to the organisation (a tool, product, programme, service line or way of working
-      that did not exist before: "first", "nobody had", "over a weekend", replaced a manual or missing way of doing it),
-      born from a pain they saw, AND others came to rely on it (their team, other teams, the company, customers).
-  4 = Created something genuinely new to the organisation and owned it end to end, but it was assigned, or adoption is unclear.
-  3 = First owner of a new product area or new line of work inside an existing structure, with real use.
-  2 = Helpful artefacts that are part of doing their normal job well: templates, checklists, rituals, specs, internal
-      dashboards or tools built inside their assigned scope, even if their own team adopted them. Or a significant
-      contributor to someone else's new build.
+Did they create something that did not exist in their organisation, on their own initiative, that others came to rely on?
+  5 = Created something new to the organisation ("first", "nobody had", "over a weekend", replaced a missing or manual way),
+      on their own initiative from a pain they saw, others rely on it (their team, other teams, customers), AND it changed
+      a result for customers, operations or the business (a number, or a clear before/after).
+  4 = Created something new that became their team's or company's standard, but one of those is missing (it was assigned,
+      or the impact is not stated). A framework, programme or tool the whole team adopted that moved a customer or
+      operational metric is at least a 4, even if it sits inside their own function.
+  3 = Internal process paperwork adopted by their own team (templates, rituals, review processes, specs) whose only stated
+      effect is on the team itself (e.g. "reduced misalignment"). Or first owner of a new product area inside a structure.
+  2 = Tools or artefacts built inside their assigned scope and mainly used by themselves (e.g. an internal monitoring
+      dashboard they built for their own service), or a significant contributor to someone else's new build.
   1 = Improvements to an existing product, module or process within assigned scope.
   0 = No evidence.
-  Test for 4-5: would this thing exist if the person had simply done their job description? If yes, it is 2 at most.
   Redesigning or scaling an existing product or module is not zero-to-one.
 
 (c) SHIPPED-AND-MEASURED OUTCOMES   (weight 15)

@@ -161,9 +161,9 @@ describe("Gemini response schema", () => {
 });
 
 describe("live-calibrated Vikram profile", () => {
-  it("no ops + job-internal (b) lands on 46 and trips the gate", () => {
-    const r = scoreLevels(L(0, 2, 4, 3, 4, 3), "PM");
-    expect(r.total).toBe(46);
+  it("no ops + team-only process paperwork for (b) lands near 46 and trips the gate", () => {
+    const r = scoreLevels(L(0, 3, 4, 2, 4, 3), "PM");
+    expect(r.total).toBe(47);
     expect(r.gated).toBe(true);
     expect(r.band).toBe("HOLD");
     expect(checkCalibration(calibrationTargetFor("vikram.docx")!, r).pass).toBe(true);

@@ -44,15 +44,13 @@ Use only evidence written in the CV. If there is none, the level is 0 and the ev
 
 *Score closeness to operational work, not "worked at a freight company". Adjacent ops must be able to score well.*
 
-**(b) Zero-to-one ownership**: something new to the organisation, beyond their normal job
-- 5 = Self-initiated, genuinely new to the org ("first", "nobody had"), born from a pain they saw, **and relied on by others**
-- 4 = New to the org and owned end to end, but assigned, or adoption unclear
-- 3 = First owner of a new product area or line of work inside an existing structure
-- 2 = Good artefacts that are part of the job (templates, rituals, specs, internal dashboards inside their own scope), even if their own team adopted them, or a big contribution to someone else's new build
+**(b) Zero-to-one ownership**: something new to the organisation that others rely on
+- 5 = New to the org ("first", "nobody had"), self-initiated from a pain they saw, **relied on by others, and changed a result** for customers, operations or the business
+- 4 = New and became the team or company standard, but assigned or with no stated impact. A framework the whole team adopted that moved a customer or ops metric is at least a 4
+- 3 = Internal process paperwork adopted by their own team (templates, rituals, review processes) whose only effect is on the team itself, or first owner of a new product area
+- 2 = Tools built inside their own scope and mainly used by themselves (e.g. an internal monitoring dashboard), or a big contribution to someone else's new build
 - 1 = Improvements to an existing product or process within assigned scope
 - 0 = None
-
-*Test for 4–5: would this exist if they had simply done their job description? If yes, it scores 2 at most.*
 
 **(c) Shipped-and-measured outcomes**
 - 5 = Multiple shipped things with tracked metrics, **and** killed or changed something because of the data
@@ -114,7 +112,7 @@ Score the 8 past-hire CVs **as PM**, either on the `/calibration` page or with `
 | Hire | Outcome | Target |
 |---|---|---|
 | Lavanya Iyer | Exceeds | **98**, Advance (e.g. levels 5 5 5 5 4 5) |
-| Vikram Nair | Meets | **46**, Hold (e.g. 0 2 4 3 4 3, which is gated) |
+| Vikram Nair | Meets | **46**, Hold (e.g. 0 3 4 2 4 3 = 47, which is gated) |
 | Preetham Rao | Below | **41**, Hold, **gated** (e.g. 1 2 4 3 2 1) |
 | Rohan, Sunita, Aditya, Meghna | Exceeds | Advance |
 | Rahul Bose | Meets | Not Advance |
