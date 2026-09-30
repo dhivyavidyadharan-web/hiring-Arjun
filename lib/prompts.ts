@@ -63,15 +63,19 @@ Has this person done operational work themselves, close to where goods physicall
   Score proximity to operational WORK, not "worked at a freight company".
 
 (b) ZERO-TO-ONE OWNERSHIP   (weight 20)
-Did they create something that did not exist, on their own initiative, and own it end to end?
-  5 = Spotted a problem, built a new tool / product / process / function from nothing on their own initiative, owned it
-      end to end, AND others adopted it (team, other teams, customers). Signals: "built ... after finding", "nobody had",
-      "for the first time", "over a weekend", "adopted by", "now used by".
-  4 = Built something new from scratch and owned it end to end, but it was assigned, or adoption is unclear.
-  3 = First owner of a new area or first version of something inside an existing structure.
-  2 = Significant contributor to a new build led by someone else.
-  1 = Improvements only within an existing, assigned scope.
+Did they create something that did not exist in their organisation, on their own initiative, beyond their normal job, and own it?
+  5 = Created something genuinely new to the organisation (a tool, product, programme, service line or way of working
+      that did not exist before: "first", "nobody had", "over a weekend", replaced a manual or missing way of doing it),
+      born from a pain they saw, AND others came to rely on it (their team, other teams, the company, customers).
+  4 = Created something genuinely new to the organisation and owned it end to end, but it was assigned, or adoption is unclear.
+  3 = First owner of a new product area or new line of work inside an existing structure, with real use.
+  2 = Helpful artefacts that are part of doing their normal job well: templates, checklists, rituals, specs, internal
+      dashboards or tools built inside their assigned scope, even if their own team adopted them. Or a significant
+      contributor to someone else's new build.
+  1 = Improvements to an existing product, module or process within assigned scope.
   0 = No evidence.
+  Test for 4-5: would this thing exist if the person had simply done their job description? If yes, it is 2 at most.
+  Redesigning or scaling an existing product or module is not zero-to-one.
 
 (c) SHIPPED-AND-MEASURED OUTCOMES   (weight 15)
 Did they ship, measure what happened, and act on the measurement?
@@ -89,7 +93,8 @@ Did they make consequential calls with nobody above them to check, and live with
       self-employed, "no product layer", "without escalation") AND lived with the result, including owning a miss.
   4 = Sole owner of an area with real decision authority.
   3 = Clear ownership of a defined area inside a structured team.
-  2 = Owned tasks or features; decisions sat with others (e.g. one of several PMs, roadmap reviewed by the CTO).
+  2 = Owned tasks or features, or a module, while decisions sat with others. One of several PMs whose roadmap is
+      presented to or reviewed by the CTO / VP is a 2, not a 3.
   1 = Executed other people's decisions.
   0 = Supporting role only.
 

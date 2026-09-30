@@ -198,7 +198,7 @@ export const CALIBRATION_TOLERANCE = 5;
 
 export const CALIBRATION: CalibrationTarget[] = [
   { key: "lavanya", label: "Lavanya Iyer (PM)", outcome: "Exceeds", score: 98, band: "ADVANCE", gated: false },
-  { key: "vikram", label: "Vikram Nair (PM)", outcome: "Meets", score: 46, band: "HOLD", gated: false },
+  { key: "vikram", label: "Vikram Nair (PM)", outcome: "Meets", score: 46, band: "HOLD" },
   { key: "preetham", label: "Preetham Rao (Backend Eng)", outcome: "Below", score: 41, band: "HOLD", gated: true },
   { key: "rohan", label: "Rohan Desai (Head of Eng)", outcome: "Exceeds", band: "ADVANCE" },
   { key: "sunita", label: "Sunita Krishnamurthy (Ops Lead)", outcome: "Exceeds", band: "ADVANCE" },

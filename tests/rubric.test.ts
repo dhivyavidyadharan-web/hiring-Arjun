@@ -53,7 +53,7 @@ describe("documented calibration scores are reachable", () => {
     expect(r.gated).toBe(false);
   });
 
-  it("Vikram: 46, Hold, gate passes", () => {
+  it("Vikram (one scoring path): 46, Hold", () => {
     const r = scoreLevels(L(2, 2, 3, 1, 2, 4), "PM");
     expect(r.total).toBe(46);
     expect(r.band).toBe("HOLD");
@@ -157,5 +157,15 @@ describe("Gemini response schema", () => {
     const s = jsonSchemaFor(ScoreSchema) as { $schema?: string; properties: Record<string, unknown>; required: string[] };
     expect(s.$schema).toBeUndefined();
     expect(s.required).toEqual(expect.arrayContaining(["a", "b", "c", "d", "e", "f_pm", "f_spm", "summary"]));
+  });
+});
+
+describe("live-calibrated Vikram profile", () => {
+  it("no ops + job-internal (b) lands on 46 and trips the gate", () => {
+    const r = scoreLevels(L(0, 2, 4, 3, 4, 3), "PM");
+    expect(r.total).toBe(46);
+    expect(r.gated).toBe(true);
+    expect(r.band).toBe("HOLD");
+    expect(checkCalibration(calibrationTargetFor("vikram.docx")!, r).pass).toBe(true);
   });
 });
