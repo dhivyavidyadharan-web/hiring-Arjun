@@ -160,6 +160,13 @@ describe("calibration checks", () => {
     expect(checkCalibration(t, scoreLevels(L(3, 1, 4, 3, 2, 1), "PM")).reasons).toContain("gate should trigger");
   });
 
+  it("accepts Hold or Decline for Preetham, but only when gated", () => {
+    const t = calibrationTargetFor("preetham.docx")!;
+    expect(checkCalibration(t, scoreLevels(L(1, 2, 4, 3, 3, 2), "PM")).pass).toBe(true); // 45 Hold, gated
+    expect(checkCalibration(t, scoreLevels(L(1, 2, 4, 3, 3, 0), "PM")).pass).toBe(true); // 39 Decline, gated
+    expect(checkCalibration(t, scoreLevels(L(4, 0, 4, 3, 3, 0), "PM")).pass).toBe(false); // 20/50: not gated
+  });
+
   it("accepts Advance or Review for undocumented Exceeds hires", () => {
     const t = calibrationTargetFor("aditya.docx")!;
     expect(checkCalibration(t, scoreLevels(L(4, 4, 5, 3, 4, 2), "PM")).pass).toBe(true); // 74 = Review

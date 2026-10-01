@@ -122,7 +122,7 @@ export default function CalibrationPage() {
                   <td>{t.outcome}</td>
                   <td>
                     {t.score !== undefined && <b>{t.score} · </b>}
-                    {t.band === "NOT_ADVANCE" ? "anything but Advance" : t.band === "ADVANCE_OR_REVIEW" ? "Advance or Review" : BAND_LABELS[t.band]}
+                    {t.band === "NOT_ADVANCE" ? "anything but Advance" : t.band === "ADVANCE_OR_REVIEW" ? "Advance or Review" : t.band === "HOLD_OR_DECLINE" ? "Hold or Decline" : BAND_LABELS[t.band]}
                     {t.gated && " (gated)"}
                   </td>
                   <td>

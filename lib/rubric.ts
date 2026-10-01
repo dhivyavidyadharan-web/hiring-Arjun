@@ -194,8 +194,8 @@ export interface CalibrationTarget {
   outcome: "Exceeds" | "Meets" | "Below";
   /** Exact score target where the rubric documents one; otherwise only the band is checked. */
   score?: number;
-  /** ADVANCE_OR_REVIEW: worth Arjun's time. NOT_ADVANCE: anything but Advance. */
-  band: Band | "ADVANCE_OR_REVIEW" | "NOT_ADVANCE";
+  /** ADVANCE_OR_REVIEW: worth Arjun's time. HOLD_OR_DECLINE: not a hire. NOT_ADVANCE: anything but Advance. */
+  band: Band | "ADVANCE_OR_REVIEW" | "HOLD_OR_DECLINE" | "NOT_ADVANCE";
   gated?: boolean;
 }
 
@@ -204,7 +204,7 @@ export const CALIBRATION_TOLERANCE = 5;
 export const CALIBRATION: CalibrationTarget[] = [
   { key: "lavanya", label: "Lavanya Iyer (PM)", outcome: "Exceeds", score: 98, band: "ADVANCE", gated: false },
   { key: "vikram", label: "Vikram Nair (PM)", outcome: "Meets", score: 46, band: "HOLD" },
-  { key: "preetham", label: "Preetham Rao (Backend Eng)", outcome: "Below", score: 41, band: "HOLD", gated: true },
+  { key: "preetham", label: "Preetham Rao (Backend Eng)", outcome: "Below", score: 41, band: "HOLD_OR_DECLINE", gated: true },
   { key: "rohan", label: "Rohan Desai (Head of Eng)", outcome: "Exceeds", band: "ADVANCE_OR_REVIEW" },
   { key: "sunita", label: "Sunita Krishnamurthy (Ops Lead)", outcome: "Exceeds", band: "ADVANCE_OR_REVIEW" },
   { key: "aditya", label: "Aditya Shetty (Sales Lead)", outcome: "Exceeds", band: "ADVANCE_OR_REVIEW" },
@@ -232,6 +232,8 @@ export function checkCalibration(target: CalibrationTarget, result: RoleResult):
     if (result.band === "ADVANCE") reasons.push("should not Advance");
   } else if (target.band === "ADVANCE_OR_REVIEW") {
     if (result.band !== "ADVANCE" && result.band !== "REVIEW") reasons.push(`band ${result.band}, expected Advance or Review`);
+  } else if (target.band === "HOLD_OR_DECLINE") {
+    if (result.band !== "HOLD" && result.band !== "DECLINE") reasons.push(`band ${result.band}, expected Hold or Decline`);
   } else if (result.band !== target.band) {
     reasons.push(`band ${result.band}, expected ${target.band}`);
   }

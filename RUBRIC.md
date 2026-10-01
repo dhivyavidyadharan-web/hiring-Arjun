@@ -126,7 +126,7 @@ Score the 8 past-hire CVs **as PM**, either on the `/calibration` page or with `
 |---|---|---|
 | Lavanya Iyer | Exceeds | **98** ±5, Advance (e.g. levels 5 5 5 5 4 5 = 99) |
 | Vikram Nair | Meets | **46** ±5, Hold (e.g. 0 3 4 2 4 3 = 46, which is gated) |
-| Preetham Rao | Below | **41** ±5, Hold, **gated** (e.g. 1 2 4 3 2 1 = 41, gate 15/50) |
+| Preetham Rao | Below | **41** ±5, Hold **or Decline**, **gated** (e.g. 1 2 4 3 2 1 = 41, gate 15/50) |
 | Rohan, Sunita, Aditya, Meghna | Exceeds | Advance **or Review** |
 | Rahul Bose | Meets | Not Advance |
 
