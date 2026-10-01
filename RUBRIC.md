@@ -8,9 +8,10 @@
 > criteria, weights, gate and bands. Only criterion (f), role-scope fit, is scored twice: once against the PM job
 > description and once against the SPM one.
 >
-> **Where it comes from.** The structure (six weighted criteria, the (a)+(b) gate at 15/45, the bands, and three
-> calibration scores) follows the rubric provided to us. The weights for (c)–(f) and all level definitions are ours,
-> drawn from our earlier v1 analysis of Arjun's 8 past hires and calibrated against them (§6, `tests/rubric.test.ts`).
+> **How it was built.** We drafted two versions of the rubric in Claude Chat and Claude Cowork: v1, built from Arjun's
+> 8 past hires and the two job descriptions, and a second draft with six weighted criteria, an (a)+(b) gate and score
+> bands. v2 combines the best of both. It keeps the second draft's structure and uses v1's evidence-based level
+> definitions. It was then implemented and calibrated against Arjun's past hires in Claude Code (§6, `tests/rubric.test.ts`).
 
 ## 1. How a CV is scored
 
