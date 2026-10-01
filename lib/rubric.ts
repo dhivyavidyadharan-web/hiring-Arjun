@@ -3,11 +3,11 @@
 // that is arithmetic or policy (points, gate, totals, bands, probes) happens
 // here, in code, so it is reproducible and auditable.
 
-export const RUBRIC_VERSION = "v2";
+export const RUBRIC_VERSION = "v2.1";
 
 export type CriterionKey = "a" | "b" | "c" | "d" | "e" | "f";
 export type Role = "PM" | "SPM";
-export type Band = "ADVANCE" | "HOLD" | "DECLINE";
+export type Band = "ADVANCE" | "REVIEW" | "HOLD" | "DECLINE";
 export type Level = 0 | 1 | 2 | 3 | 4 | 5;
 
 export interface CriterionScore {
@@ -39,7 +39,7 @@ export const CRITERIA: Record<CriterionKey, { name: string; short: string; weigh
   b: {
     name: "Zero-to-one ownership",
     short: "0→1",
-    weight: 20,
+    weight: 25,
     probe: "Tell me about something you built from nothing that nobody asked for. Who uses it now?",
   },
   c: {
@@ -57,7 +57,7 @@ export const CRITERIA: Record<CriterionKey, { name: string; short: string; weigh
   e: {
     name: "Multiplier effect",
     short: "Multiplier",
-    weight: 10,
+    weight: 5,
     probe: "What's something you created that other people or teams now work from? How did it spread?",
   },
   f: {
@@ -71,11 +71,12 @@ export const CRITERIA: Record<CriterionKey, { name: string; short: string; weigh
 export const CRITERION_KEYS = Object.keys(CRITERIA) as CriterionKey[];
 export const MAX_LEVEL = 5;
 
-/** Gate: if (a) + (b) points are below this (out of 45), the candidate cannot Advance. */
-export const GATE_THRESHOLD = 15;
-export const GATE_MAX = CRITERIA.a.weight + CRITERIA.b.weight; // 45
+/** Gate: if (a) + (b) points are below this (out of 50), the candidate is capped at Hold. */
+export const GATE_THRESHOLD = 20;
+export const GATE_MAX = CRITERIA.a.weight + CRITERIA.b.weight; // 50
 
-export const ADVANCE_AT = 70;
+export const ADVANCE_AT = 75;
+export const REVIEW_AT = 65;
 export const HOLD_AT = 40;
 
 export const ROLE_TITLES: Record<Role, string> = {
@@ -85,6 +86,7 @@ export const ROLE_TITLES: Record<Role, string> = {
 
 export const BAND_LABELS: Record<Band, string> = {
   ADVANCE: "Advance",
+  REVIEW: "Review",
   HOLD: "Hold",
   DECLINE: "Decline",
 };
@@ -117,8 +119,9 @@ export interface RoleResult {
 
 export function bandFor(total: number, gated: boolean): Band {
   if (total < HOLD_AT) return "DECLINE";
-  if (gated) return "HOLD"; // capped: can never Advance, but a Decline stays a Decline
-  return total >= ADVANCE_AT ? "ADVANCE" : "HOLD";
+  if (gated) return "HOLD"; // capped: never Review or Advance, but a Decline stays a Decline
+  if (total >= ADVANCE_AT) return "ADVANCE";
+  return total >= REVIEW_AT ? "REVIEW" : "HOLD";
 }
 
 export function scoreLevels(levels: Record<CriterionKey, number>, role: Role): RoleResult {
@@ -191,7 +194,8 @@ export interface CalibrationTarget {
   outcome: "Exceeds" | "Meets" | "Below";
   /** Exact score target where the rubric documents one; otherwise only the band is checked. */
   score?: number;
-  band: Band | "NOT_ADVANCE";
+  /** ADVANCE_OR_REVIEW: worth Arjun's time. NOT_ADVANCE: anything but Advance. */
+  band: Band | "ADVANCE_OR_REVIEW" | "NOT_ADVANCE";
   gated?: boolean;
 }
 
@@ -201,10 +205,10 @@ export const CALIBRATION: CalibrationTarget[] = [
   { key: "lavanya", label: "Lavanya Iyer (PM)", outcome: "Exceeds", score: 98, band: "ADVANCE", gated: false },
   { key: "vikram", label: "Vikram Nair (PM)", outcome: "Meets", score: 46, band: "HOLD" },
   { key: "preetham", label: "Preetham Rao (Backend Eng)", outcome: "Below", score: 41, band: "HOLD", gated: true },
-  { key: "rohan", label: "Rohan Desai (Head of Eng)", outcome: "Exceeds", band: "ADVANCE" },
-  { key: "sunita", label: "Sunita Krishnamurthy (Ops Lead)", outcome: "Exceeds", band: "ADVANCE" },
-  { key: "aditya", label: "Aditya Shetty (Sales Lead)", outcome: "Exceeds", band: "ADVANCE" },
-  { key: "meghna", label: "Meghna Tiwari (CSM)", outcome: "Exceeds", band: "ADVANCE" },
+  { key: "rohan", label: "Rohan Desai (Head of Eng)", outcome: "Exceeds", band: "ADVANCE_OR_REVIEW" },
+  { key: "sunita", label: "Sunita Krishnamurthy (Ops Lead)", outcome: "Exceeds", band: "ADVANCE_OR_REVIEW" },
+  { key: "aditya", label: "Aditya Shetty (Sales Lead)", outcome: "Exceeds", band: "ADVANCE_OR_REVIEW" },
+  { key: "meghna", label: "Meghna Tiwari (CSM)", outcome: "Exceeds", band: "ADVANCE_OR_REVIEW" },
   { key: "rahul", label: "Rahul Bose (Growth)", outcome: "Meets", band: "NOT_ADVANCE" },
 ];
 
@@ -226,6 +230,8 @@ export function checkCalibration(target: CalibrationTarget, result: RoleResult):
   }
   if (target.band === "NOT_ADVANCE") {
     if (result.band === "ADVANCE") reasons.push("should not Advance");
+  } else if (target.band === "ADVANCE_OR_REVIEW") {
+    if (result.band !== "ADVANCE" && result.band !== "REVIEW") reasons.push(`band ${result.band}, expected Advance or Review`);
   } else if (result.band !== target.band) {
     reasons.push(`band ${result.band}, expected ${target.band}`);
   }

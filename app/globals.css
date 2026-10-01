@@ -18,6 +18,8 @@
   --shortlist-bg: rgba(46, 204, 143, 0.14);
   --review: #ffc56b;
   --review-bg: rgba(255, 184, 77, 0.14);
+  --rev: #6fc3ff;
+  --rev-bg: rgba(61, 160, 255, 0.16);
   --decline: #ff8a8a;
   --decline-bg: rgba(255, 99, 99, 0.14);
   --unclear: #a9b8dd;
@@ -218,6 +220,7 @@ tr.row:hover td { background: rgba(61, 139, 255, 0.08); }
 
 .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .ADVANCE, .sent { color: var(--shortlist); background: var(--shortlist-bg); box-shadow: inset 0 0 0 1px rgba(94, 230, 176, 0.25); }
+.REVIEW { color: var(--rev); background: var(--rev-bg); box-shadow: inset 0 0 0 1px rgba(111, 195, 255, 0.3); }
 .HOLD, .sending, .needs_role { color: var(--review); background: var(--review-bg); box-shadow: inset 0 0 0 1px rgba(255, 197, 107, 0.25); }
 .DECLINE, .failed, .error { color: var(--decline); background: var(--decline-bg); box-shadow: inset 0 0 0 1px rgba(255, 138, 138, 0.25); }
 .draft, .processing { color: var(--unclear); background: var(--unclear-bg); }

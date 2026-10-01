@@ -140,6 +140,7 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
   const stats = {
     total: candidates.length,
     advance: ready.filter((c) => c.band === "ADVANCE").length,
+    review: ready.filter((c) => c.band === "REVIEW").length,
     hold: ready.filter((c) => c.band === "HOLD").length,
     decline: ready.filter((c) => c.band === "DECLINE").length,
     needsRole: needsRole.length,
@@ -174,8 +175,9 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
 
       <div className="stats">
         <Stat label="Candidates" value={stats.total} />
-        <Stat label="Advance (70+)" value={stats.advance} />
-        <Stat label="Hold (40-69 / gated)" value={stats.hold} />
+        <Stat label="Advance (75+)" value={stats.advance} />
+        <Stat label="Review (65-74)" value={stats.review} />
+        <Stat label="Hold (40-64 / gated)" value={stats.hold} />
         <Stat label="Decline (<40)" value={stats.decline} />
         <Stat label="Need a role" value={stats.needsRole} />
         <Stat label="Emails sent" value={stats.sent} />

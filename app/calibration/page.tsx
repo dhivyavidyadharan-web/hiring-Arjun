@@ -7,6 +7,7 @@ import {
   CALIBRATION_TOLERANCE,
   CRITERIA,
   CRITERION_KEYS,
+  GATE_MAX,
   MAX_LEVEL,
   type CalibrationCheck,
   type RoleResult,
@@ -121,7 +122,7 @@ export default function CalibrationPage() {
                   <td>{t.outcome}</td>
                   <td>
                     {t.score !== undefined && <b>{t.score} · </b>}
-                    {t.band === "NOT_ADVANCE" ? "Hold or Decline" : BAND_LABELS[t.band]}
+                    {t.band === "NOT_ADVANCE" ? "anything but Advance" : t.band === "ADVANCE_OR_REVIEW" ? "Advance or Review" : BAND_LABELS[t.band]}
                     {t.gated && " (gated)"}
                   </td>
                   <td>
@@ -129,7 +130,7 @@ export default function CalibrationPage() {
                       <>
                         <b>{o.result.total}</b> · {BAND_LABELS[o.result.band]}
                         {o.result.gated && " (gated)"}
-                        <div className="small muted">gate {o.result.gateScore}/45</div>
+                        <div className="small muted">gate {o.result.gateScore}/{GATE_MAX}</div>
                       </>
                     )}
                     {o?.state === "scoring" && <span className="muted">scoring…</span>}

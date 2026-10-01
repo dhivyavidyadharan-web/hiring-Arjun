@@ -23,15 +23,15 @@ create table if not exists candidates (
   criteria          jsonb,
   score_pm          int check (score_pm between 0 and 100),
   score_spm         int check (score_spm between 0 and 100),
-  band_pm           text check (band_pm in ('ADVANCE', 'HOLD', 'DECLINE')),
-  band_spm          text check (band_spm in ('ADVANCE', 'HOLD', 'DECLINE')),
-  gated             boolean,              -- (a)+(b) < 15/45: capped at Hold
+  band_pm           text check (band_pm in ('ADVANCE', 'REVIEW', 'HOLD', 'DECLINE')),
+  band_spm          text check (band_spm in ('ADVANCE', 'REVIEW', 'HOLD', 'DECLINE')),
+  gated             boolean,              -- (a)+(b) < 20/50: capped at Hold
   summary           text,
 
   -- Filled once the role is known (immediately, or after Arjun picks it for an UNCLEAR application).
   target_role       text check (target_role in ('PM', 'SPM')),
   score             int check (score between 0 and 100),
-  band              text check (band in ('ADVANCE', 'HOLD', 'DECLINE')),
+  band              text check (band in ('ADVANCE', 'REVIEW', 'HOLD', 'DECLINE')),
   probe_questions   jsonb,
   interview_brief   text,
   invite_subject    text,

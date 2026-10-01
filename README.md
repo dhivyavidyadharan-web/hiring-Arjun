@@ -14,10 +14,10 @@ an interview brief and drafts an invitation and a rejection for each person. **N
 |---|---|---|
 | **Trigger** | Arjun uploads one or more CVs (PDF / DOCX / TXT) and picks the role applied for (PM / SPM, or Auto-detect) | `components/Dashboard.tsx` → `POST /api/upload` |
 | **Input** | File → plain text | `lib/parse.ts` |
-| **Context** | Rubric v2: six weighted criteria, the (a)+(b) gate, bands, and the two JDs | `RUBRIC.md`, `lib/prompts.ts`, `lib/rubric.ts` |
+| **Context** | Rubric v2.1: six weighted criteria, the (a)+(b) gate, bands, and the two JDs | `RUBRIC.md`, `lib/prompts.ts`, `lib/rubric.ts` |
 | **Processing** | ① Gemini (Flash) pulls out name, email and phone, tags the role (with a reason), and **anonymises** the CV. ② A code-level redaction pass catches anything missed. | `lib/llm.ts`, `lib/redact.ts` |
 | **AI** | ③ **Blind scoring** of the anonymised text only, by Gemini (Pro). It returns levels 0–5 with a verbatim quote for (a)–(e), plus (f) role-scope fit for **both** PM and SPM. ④ Gemini (Flash) writes the interview brief and a personalised invitation draft. | `lib/llm.ts`, `lib/pipeline.ts` |
-| **Output** | Code computes points, totals for both roles, the gate, the band (Advance ≥70 / Hold / Decline <40) and two probe questions, and checks that every quote really is in the CV. The dashboard ranks candidates for each role and shows all six criteria as chips. | `lib/rubric.ts`, `app/page.tsx` |
+| **Output** | Code computes points, totals for both roles, the gate, the band (Advance 75+ / Review 65–74 / Hold 40–64 or gated / Decline <40) and two probe questions, and checks that every quote really is in the CV. The dashboard ranks candidates for each role and shows all six criteria as chips. | `lib/rubric.ts`, `app/page.tsx` |
 | **Action (human)** | Arjun clicks **Invite to interview** or **Send rejection**, then confirms with **Yes, send**. This records `arjun_decision` and sends through **Resend**. | `POST /api/candidates/:id/send` |
 
 ### Unclear role

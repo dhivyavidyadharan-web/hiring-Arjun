@@ -1,4 +1,4 @@
-# Kargo Hiring Rubric v2
+# Kargo Hiring Rubric v2.1
 
 **Roles:** Product Manager (PM), Senior Product Manager (SPM)
 **Purpose:** Score each applicant CV and produce a ranked shortlist with rationale.
@@ -29,10 +29,10 @@ Use only evidence written in the CV. If there is none, the level is 0 and the ev
 | | Criterion | Weight | Question |
 |---|---|---|---|
 | (a) | Operational domain fluency | **25** | Has this person done operational work themselves, close to where goods physically move? |
-| (b) | Zero-to-one ownership | **20** | Did they create something that didn't exist, on their own initiative, and own it end to end? |
+| (b) | Zero-to-one ownership | **25** | Did they create something that didn't exist, on their own initiative, and own it end to end? |
 | (c) | Shipped-and-measured outcomes | **15** | Did they ship, measure what happened, and act on the measurement? |
 | (d) | Independent judgment | **15** | Did they make consequential calls with nobody above them, and live with the result? |
-| (e) | Multiplier effect | **10** | Did their work make other people or teams better or faster? |
+| (e) | Multiplier effect | **5** | Did their work make other people or teams better or faster? |
 | (f) | Role-scope fit (per role) | **15** | How well does the career match the PM or SPM scope in the JD? |
 
 ### Level anchors (0–5)
@@ -89,13 +89,21 @@ Use only evidence written in the CV. If there is none, the level is 0 and the ev
 
 ## 3. Gate and bands
 
-- **Gate:** if (a) + (b) is **below 15 of 45 points**, the candidate is flagged **gated** and cannot Advance, whatever the total.
-  A gated candidate can still be a Decline.
-- **Bands:** **Advance ≥ 70** · **Hold 40–69, or gated** · **Decline < 40**
+- **Gate:** if (a) + (b) is **below 20 of 50 points**, the candidate is flagged **gated** and is capped at **Hold**:
+  they can never be Review or Advance, whatever the total. A gated candidate can still be a Decline.
+- **Bands:**
 
-> Note: with these weights, a gated candidate's maximum total is 14 + 55 = 69, so the gate can't change the band on
-> its own. It works as a visible flag ("no ops fluency or 0→1 evidence") and becomes a hard cap if the weights are ever
-> changed. `bandFor()` enforces the cap either way.
+  | Band | Score | Meaning |
+  |---|---|---|
+  | **Advance** | 75+ | Strong match. Arjun should interview them |
+  | **Review** | 65–74 | Close call. Worth Arjun's careful look |
+  | **Hold** | 40–64, or gated | Probably not now |
+  | **Decline** | below 40 | Respectful decline |
+
+> Why a Review band: in live calibration the same CV can move about ±5 points between runs. Review covers that zone
+> above Hold, so close calls are labelled as close calls instead of being forced into yes or no.
+>
+> The gate now matters on its own: a gated candidate can total up to 19 + 50 = 69, which would otherwise be Review.
 
 ## 4. Zero-weight signals (never scored, never mentioned as strengths)
 
@@ -116,10 +124,10 @@ Score the 8 past-hire CVs **as PM**, either on the `/calibration` page or with `
 
 | Hire | Outcome | Target |
 |---|---|---|
-| Lavanya Iyer | Exceeds | **98**, Advance (e.g. levels 5 5 5 5 4 5) |
-| Vikram Nair | Meets | **46**, Hold (e.g. 0 3 4 2 4 3 = 47, which is gated) |
-| Preetham Rao | Below | **41**, Hold, **gated** (e.g. 1 2 4 3 2 1) |
-| Rohan, Sunita, Aditya, Meghna | Exceeds | Advance |
+| Lavanya Iyer | Exceeds | **98** ±5, Advance (e.g. levels 5 5 5 5 4 5 = 99) |
+| Vikram Nair | Meets | **46** ±5, Hold (e.g. 0 3 4 2 4 3 = 46, which is gated) |
+| Preetham Rao | Below | **41** ±5, Hold, **gated** (e.g. 1 2 4 3 2 1 = 41, gate 15/50) |
+| Rohan, Sunita, Aditya, Meghna | Exceeds | Advance **or Review** |
 | Rahul Bose | Meets | Not Advance |
 
 Scores with a documented target must land within **±5**. **Pass condition:** all 8 rows pass. If any fail, fix

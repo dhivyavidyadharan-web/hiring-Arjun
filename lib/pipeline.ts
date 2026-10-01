@@ -4,6 +4,8 @@ import { redact } from "./redact";
 import {
   CRITERIA,
   evidenceAppearsIn,
+  GATE_MAX,
+  GATE_THRESHOLD,
   probeQuestions,
   ROLE_TITLES,
   RUBRIC_VERSION,
@@ -129,7 +131,7 @@ export async function draftFor(
         criterion_names: Object.fromEntries(Object.entries(CRITERIA).map(([k, v]) => [k, `(${k}) ${v.name}`])),
         total: result.total,
         band: result.band,
-        gate: { a_plus_b_points: result.gateScore, of: 45, triggered: result.gated },
+        gate: { a_plus_b_points: result.gateScore, of: GATE_MAX, threshold: GATE_THRESHOLD, triggered: result.gated },
         points: result.points,
         criteria: { ...rest, f_role_fit: role === "PM" ? f_pm : f_spm },
         summary: c.summary,
