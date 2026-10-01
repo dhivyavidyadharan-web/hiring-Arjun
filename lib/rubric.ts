@@ -167,6 +167,7 @@ export function evidenceAppearsIn(evidence: string, cv: string): boolean {
   if (/^no evidence in cv\.?$/i.test(evidence.trim())) return true;
   const norm = (s: string) =>
     s
+      .replace(/(\p{L})-\s*\n?\s+(\p{L})/gu, "$1$2") // re-join words hyphenated across a PDF line break
       .toLowerCase()
       .replace(/[‘’“”"'`]/g, "")
       .replace(/[–—-]/g, " ")

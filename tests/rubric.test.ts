@@ -111,6 +111,11 @@ describe("evidence check", () => {
     expect(evidenceAppearsIn('"Shipped 6 features   across 12 months"', cv)).toBe(true);
   });
 
+  it("accepts a quote whose word was hyphenated across a PDF line break", () => {
+    const pdf = "taking it from MVP to production-ready deploy- ment with reliable perception";
+    expect(evidenceAppearsIn("taking it from MVP to production-ready deployment with reliable perception", pdf)).toBe(true);
+  });
+
   it("accepts multiple fragments joined with ...", () => {
     expect(evidenceAppearsIn("Sole PM responsible ... Shipped 6 features", cv)).toBe(true);
   });
