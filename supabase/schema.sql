@@ -8,6 +8,7 @@ create table if not exists candidates (
   id                uuid primary key default gen_random_uuid(),
   created_at        timestamptz not null default now(),
   candidate_file    text not null,
+  file_hash         text,                 -- SHA-256 of the uploaded file (exact-duplicate check)
 
   -- Personal details: stored for contacting the candidate, NEVER sent to the scorer.
   candidate_name    text,
@@ -50,10 +51,15 @@ create table if not exists candidates (
   status            text not null default 'processing' check (status in ('processing', 'needs_role', 'ready', 'error')),
   error             text,
   model             text,
-  rubric_version    text
+  rubric_version    text,
+
+  -- Possible duplicate: same phone or same full name as an earlier candidate (email alone is not used).
+  duplicate_of      uuid references candidates(id) on delete set null,
+  duplicate_reason  text
 );
 
 create index if not exists candidates_rank on candidates (score desc nulls last);
+create index if not exists candidates_file_hash on candidates (file_hash);
 
 alter table candidates enable row level security;
 -- Intentionally no policies: only the service role (server) can access this table.

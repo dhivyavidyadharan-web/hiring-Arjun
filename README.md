@@ -43,6 +43,9 @@ pass or fail against RUBRIC.md §6. `npm run calibrate -- ./hires` does the same
 - **Evidence check.** If a quote can't be found in the CV, it's flagged in red.
 - **Rejections name nobody.** They use a fixed template signed "The Kargo Hiring Team": no candidate name, no Arjun, no staff,
   no blame, no scores. The server re-checks the final (possibly edited) text and refuses to send if a name or score reference is found.
+- **Duplicate warning.** An identical file is caught **before** scoring ("Already uploaded", with **Upload anyway**). A different
+  file from the same person (same phone, or same full name) is scored but marked **possible duplicate of …**. Email alone
+  is not used, because shared inboxes (e.g. a class squad address) would flag unrelated people.
 - **Login required.** Every page and API route is behind a single-password session.
 
 ## Setup

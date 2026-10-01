@@ -51,10 +51,12 @@ export interface Candidate {
   email_error: string | null;
   status: "processing" | "needs_role" | "ready" | "error";
   error: string | null;
+  duplicate_of: string | null;
+  duplicate_reason: string | null;
 }
 
 type View = Role | "ALL";
-type QueueItem = { name: string; state: "waiting" | "scoring" | "done" | "error"; note?: string };
+type QueueItem = { name: string; file: File; state: "waiting" | "scoring" | "done" | "error" | "duplicate"; note?: string };
 
 const CONCURRENCY = 2;
 
@@ -74,34 +76,56 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
   const [uploadRole, setUploadRole] = useState<Role | "AUTO">("AUTO");
   const fileInput = useRef<HTMLInputElement>(null);
 
+  async function sendOne(file: File, i: number, force: boolean): Promise<"added" | "duplicate" | "error"> {
+    const update = (patch: Partial<QueueItem>) =>
+      setQueue((q) => q.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
+    update({ state: "scoring", note: undefined });
+    const body = new FormData();
+    body.append("file", file);
+    if (uploadRole !== "AUTO") body.append("role", uploadRole);
+    if (force) body.append("force", "1");
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body });
+      const json = (await res.json()) as {
+        error?: string;
+        score?: number | null;
+        band?: Band | null;
+        role?: string;
+        duplicate?: boolean;
+        possible_duplicate?: string | null;
+      };
+      if (res.status === 409 && json.duplicate) {
+        update({ state: "duplicate", note: json.error });
+        return "duplicate";
+      }
+      if (!res.ok) {
+        update({ state: "error", note: json.error });
+        return "error";
+      }
+      const result = json.role === "UNCLEAR" ? "role unclear: pick it below" : `${json.score}/100 · ${json.band ? BAND_LABELS[json.band] : ""}`;
+      update({ state: "done", note: json.possible_duplicate ? `${result} · possible duplicate (${json.possible_duplicate})` : result });
+      return "added";
+    } catch (e) {
+      update({ state: "error", note: String(e) });
+      return "error";
+    }
+  }
+
   async function upload(files: File[]) {
     if (files.length === 0) return;
-    setQueue(files.map((f) => ({ name: f.name, state: "waiting" })));
-    const update = (i: number, patch: Partial<QueueItem>) =>
-      setQueue((q) => q.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
-
+    setQueue(files.map((f) => ({ name: f.name, file: f, state: "waiting" })));
+    const outcomes: string[] = [];
     let next = 0;
     async function worker() {
       while (next < files.length) {
         const i = next++;
-        update(i, { state: "scoring" });
-        const body = new FormData();
-        body.append("file", files[i]);
-        if (uploadRole !== "AUTO") body.append("role", uploadRole);
-        try {
-          const res = await fetch("/api/upload", { method: "POST", body });
-          const json = (await res.json()) as { error?: string; score?: number | null; band?: Band | null; role?: string };
-          if (!res.ok) update(i, { state: "error", note: json.error });
-          else if (json.role === "UNCLEAR") update(i, { state: "done", note: "role unclear: pick it below" });
-          else update(i, { state: "done", note: `${json.score}/100 · ${json.band ? BAND_LABELS[json.band] : ""}` });
-        } catch (e) {
-          update(i, { state: "error", note: String(e) });
-        }
+        outcomes[i] = await sendOne(files[i], i, false);
       }
     }
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, files.length) }, worker));
-    // Re-render the server page so new candidates arrive in ranked order.
-    window.location.reload();
+    // Re-render the server page so new candidates arrive in ranked order, unless a
+    // duplicate warning is waiting for Arjun's decision (a reload would hide it).
+    if (!outcomes.includes("duplicate")) window.location.reload();
   }
 
   const needsRole = candidates.filter((c) => c.status === "needs_role");
@@ -198,16 +222,36 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
           </button>
         </div>
         {queue.length > 0 && (
+          <>
           <ul className="queue">
             {queue.map((q, i) => (
               <li key={i}>
-                <span className={`pill ${q.state === "done" ? "ADVANCE" : q.state === "error" ? "DECLINE" : "draft"}`}>
-                  {q.state}
+                <span
+                  className={`pill ${q.state === "done" ? "ADVANCE" : q.state === "error" ? "DECLINE" : q.state === "duplicate" ? "HOLD" : "draft"}`}
+                >
+                  {q.state === "duplicate" ? "already uploaded" : q.state}
                 </span>{" "}
                 {q.name} {q.note && <span className="muted">· {q.note}</span>}
+                {q.state === "duplicate" && (
+                  <>
+                    {" "}
+                    <button className="small" onClick={() => void sendOne(q.file, i, true)}>
+                      Upload anyway
+                    </button>
+                  </>
+                )}
               </li>
             ))}
           </ul>
+          {queue.some((q) => q.state === "duplicate") && queue.every((q) => q.state !== "scoring" && q.state !== "waiting") && (
+            <p className="small" style={{ margin: "8px 0 0" }}>
+              Skipped files were not scored.{" "}
+              <button className="small" onClick={() => window.location.reload()}>
+                Refresh list
+              </button>
+            </p>
+          )}
+          </>
         )}
       </section>
 
@@ -218,7 +262,7 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
             Both roles are already scored. Pick the role this person applied for, and the brief and email drafts will be written for it.
           </p>
           {needsRole.map((c) => (
-            <RolePicker key={c.id} c={c} onDone={(patch) => patchLocal(c.id, patch)} onDelete={() => removeLocal(c.id)} />
+            <RolePicker key={c.id} c={c} all={candidates} onDone={(patch) => patchLocal(c.id, patch)} onDelete={() => removeLocal(c.id)} />
           ))}
         </section>
       )}
@@ -255,6 +299,7 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
                   key={c.id}
                   rank={i + 1}
                   c={c}
+                  all={candidates}
                   view={view}
                   open={openId === c.id}
                   onToggle={() => setOpenId(openId === c.id ? null : c.id)}
@@ -315,10 +360,12 @@ function Chips({ criteria, role }: { criteria: Criteria; role: Role }) {
 
 function RolePicker({
   c,
+  all,
   onDone,
   onDelete,
 }: {
   c: Candidate;
+  all: Candidate[];
   onDone: (p: Partial<Candidate>) => void;
   onDelete: () => void;
 }) {
@@ -347,7 +394,7 @@ function RolePicker({
   return (
     <div className="picker">
       <div>
-        <b>{c.candidate_name ?? "(name not found)"}</b> <span className="muted small">· {c.candidate_file}</span>
+        <b>{c.candidate_name ?? "(name not found)"}</b> <span className="muted small">· {c.candidate_file}</span> <DuplicateBadge c={c} all={all} />
         <div className="small">
           <span className="muted">Why unclear:</span> {c.role_reason ?? "no reason recorded"}
         </div>
@@ -374,6 +421,7 @@ function RolePicker({
 function Row(props: {
   rank: number;
   c: Candidate;
+  all: Candidate[];
   view: View;
   open: boolean;
   onToggle: () => void;
@@ -390,6 +438,7 @@ function Row(props: {
         <td>
           <b>{c.candidate_name ?? "(name not found)"}</b>
           <div className="muted small">{c.candidate_file}</div>
+          <DuplicateBadge c={c} all={props.all} />
         </td>
         <td>{c.role_applied}</td>
         <td>
@@ -708,5 +757,16 @@ function DeleteButton({ id, onDelete }: { id: string; onDelete: () => void }) {
     >
       Remove
     </button>
+  );
+}
+
+function DuplicateBadge({ c, all }: { c: Candidate; all: Candidate[] }) {
+  if (!c.duplicate_of) return null;
+  const other = all.find((x) => x.id === c.duplicate_of);
+  const who = other ? `${other.candidate_name ?? other.candidate_file}` : "an earlier upload";
+  return (
+    <span className="pill HOLD" title={`Looks like ${who}: ${c.duplicate_reason ?? "matching details"}`}>
+      ⚠ possible duplicate of {who}
+    </span>
   );
 }
