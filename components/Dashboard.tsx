@@ -70,7 +70,15 @@ function shown(c: Candidate, view: View): { role: Role | null; score: number | n
 /** Where emails really go in demo mode (EMAIL_TEST_RECIPIENT), or null when they go to the candidate. */
 const TestRecipient = createContext<string | null>(null);
 
-export default function Dashboard({ initial, testRecipient = null }: { initial: Candidate[]; testRecipient?: string | null }) {
+export default function Dashboard({
+  initial,
+  testRecipient = null,
+  publicDemo = false,
+}: {
+  initial: Candidate[];
+  testRecipient?: string | null;
+  publicDemo?: boolean;
+}) {
   const [candidates, setCandidates] = useState(initial);
   const [view, setView] = useState<View>("ALL");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -171,9 +179,11 @@ export default function Dashboard({ initial, testRecipient = null }: { initial: 
           <a className="btn" href="/calibration">
             Calibration
           </a>
-          <form action="/api/logout" method="post">
-            <button>Sign out</button>
-          </form>
+          {!publicDemo && (
+            <form action="/api/logout" method="post">
+              <button>Sign out</button>
+            </form>
+          )}
         </div>
       </div>
 

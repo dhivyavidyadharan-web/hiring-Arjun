@@ -46,7 +46,8 @@ pass or fail against RUBRIC.md §6. `npm run calibrate -- ./hires` does the same
 - **Duplicate warning.** An identical file is caught **before** scoring ("Already uploaded", with **Upload anyway**). A different
   file from the same person (same phone, or same full name) is scored but marked **possible duplicate of …**. Email alone
   is not used, because shared inboxes (e.g. a class squad address) would flag unrelated people.
-- **Login required.** Every page and API route is behind a single-password session.
+- **Login.** Every page and API route is behind a single-password session. For the graded demo, which uses fictional
+  candidates, the login is switched off with `PUBLIC_DEMO=true`. Remove that setting to require the password again.
 
 ## Setup
 
