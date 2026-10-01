@@ -4,11 +4,13 @@
 **Purpose:** Score each applicant CV and produce a ranked shortlist with rationale.
 **The system recommends. Arjun decides.** No candidate email is sent until Arjun clicks Send for that candidate.
 
-> **Where this comes from.** v2 keeps the structure of the rubric we were given: six weighted criteria, an
-> (a)+(b) gate at 15/45, Advance ≥70 / Hold 40–69 or gated / Decline <40, and three calibration scores.
-> The source didn't include weights for (c)–(f) or level definitions, so **those are ours**. We chose them to reproduce
-> the three documented scores exactly (see §6 and `tests/rubric.test.ts`). v1, built from Arjun's 8 past hires, is kept
-> in the git history and fed into the level definitions below.
+> **One rubric for every candidate.** This is the only rubric the app uses. Every CV is scored on the same six
+> criteria, weights, gate and bands. Only criterion (f), role-scope fit, is scored twice: once against the PM job
+> description and once against the SPM one.
+>
+> **Where it comes from.** The structure (six weighted criteria, the (a)+(b) gate at 15/45, the bands, and three
+> calibration scores) follows the rubric provided to us. The weights for (c)–(f) and all level definitions are ours,
+> drawn from our earlier v1 analysis of Arjun's 8 past hires and calibrated against them (§6, `tests/rubric.test.ts`).
 
 ## 1. How a CV is scored
 
