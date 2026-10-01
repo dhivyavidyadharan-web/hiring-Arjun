@@ -21,5 +21,7 @@ export default async function Page() {
       </main>
     );
   }
-  return <Dashboard initial={(data ?? []) as Candidate[]} />;
+  // Demo mode: every email goes to this inbox instead of the candidate. Shown in the UI so it is never a surprise.
+  const testRecipient = process.env.EMAIL_TEST_RECIPIENT || null;
+  return <Dashboard initial={(data ?? []) as Candidate[]} testRecipient={testRecipient} />;
 }

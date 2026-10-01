@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { createContext, useContext, useMemo, useRef, useState } from "react";
 import {
   BAND_LABELS,
   CRITERIA,
@@ -67,7 +67,10 @@ function shown(c: Candidate, view: View): { role: Role | null; score: number | n
   return { role: c.target_role, score: c.score, band: c.band };
 }
 
-export default function Dashboard({ initial }: { initial: Candidate[] }) {
+/** Where emails really go in demo mode (EMAIL_TEST_RECIPIENT), or null when they go to the candidate. */
+const TestRecipient = createContext<string | null>(null);
+
+export default function Dashboard({ initial, testRecipient = null }: { initial: Candidate[]; testRecipient?: string | null }) {
   const [candidates, setCandidates] = useState(initial);
   const [view, setView] = useState<View>("ALL");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -155,6 +158,7 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
   }
 
   return (
+    <TestRecipient.Provider value={testRecipient}>
     <main className="wrap">
       <div className="top">
         <div>
@@ -321,6 +325,7 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
         </div>
       </section>
     </main>
+    </TestRecipient.Provider>
   );
 }
 
@@ -604,6 +609,7 @@ function ChangeRole({ c, to }: { c: Candidate; to: Role }) {
 }
 
 function EmailPanel({ c, onPatch }: { c: Candidate; onPatch: (p: Partial<Candidate>) => void }) {
+  const testRecipient = useContext(TestRecipient);
   const [tab, setTab] = useState<"invite" | "reject">(
     c.arjun_decision === "DECLINE" || (c.arjun_decision === null && c.band === "DECLINE") ? "reject" : "invite",
   );
@@ -672,7 +678,7 @@ function EmailPanel({ c, onPatch }: { c: Candidate; onPatch: (p: Partial<Candida
   const sendButton = (decision: "ADVANCE" | "DECLINE") =>
     confirming === decision ? (
       <span className="confirm">
-        Send to <b>{email}</b>?{" "}
+        Send to <b>{testRecipient ?? email}</b>?{" "}
         <button className={decision === "ADVANCE" ? "primary" : "danger"} onClick={() => void send(decision)}>
           Yes, send
         </button>{" "}
@@ -681,7 +687,7 @@ function EmailPanel({ c, onPatch }: { c: Candidate; onPatch: (p: Partial<Candida
     ) : (
       <button
         className={decision === "ADVANCE" ? "primary" : "danger"}
-        disabled={busy || !email}
+        disabled={busy || !(testRecipient ?? email)}
         onClick={() => setConfirming(decision)}
       >
         {busy ? "Sending…" : decision === "ADVANCE" ? "Invite to interview" : "Send rejection"}
@@ -706,10 +712,20 @@ function EmailPanel({ c, onPatch }: { c: Candidate; onPatch: (p: Partial<Candida
       ) : (
         <div className="email">
           {c.email_status === "failed" && <p className="err">Last send failed: {c.email_error}</p>}
-          <label className="small muted">
-            To
-            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="candidate@email.com" />
-          </label>
+          {testRecipient ? (
+            <div className="small">
+              <div className="muted">To</div>
+              <input value={testRecipient} readOnly aria-label="Sends to" />
+              <div className="muted" style={{ marginTop: 4 }}>
+                Demo mode: emails go to your Resend inbox, not the candidate. Email on the CV: {c.email ?? "none found"}
+              </div>
+            </div>
+          ) : (
+            <label className="small muted">
+              To
+              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="candidate@email.com" />
+            </label>
+          )}
           <div className="tabs" style={{ marginBottom: 0 }}>
             <button aria-pressed={tab === "invite"} onClick={() => setTab("invite")}>
               Interview invite

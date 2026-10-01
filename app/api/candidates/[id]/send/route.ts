@@ -26,7 +26,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { data: c, error: readError } = await db.from("candidates").select("*").eq("id", id).single();
   if (readError || !c) return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
   if (c.status !== "ready") return NextResponse.json({ error: "Candidate is not scored yet" }, { status: 409 });
-  if (!c.email) return NextResponse.json({ error: "No email address on this CV. Add one first." }, { status: 400 });
+  const testRecipient = process.env.EMAIL_TEST_RECIPIENT || null;
+  if (!c.email && !testRecipient) {
+    return NextResponse.json({ error: "No email address on this CV. Add one first." }, { status: 400 });
+  }
 
   const subject: string = decision === "ADVANCE" ? c.invite_subject : c.reject_subject;
   const text: string = decision === "ADVANCE" ? c.invite_body : c.reject_body;
@@ -54,7 +57,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (claimError) return NextResponse.json({ error: claimError.message }, { status: 500 });
   if (!claimed) return NextResponse.json({ error: "An email was already sent to this candidate." }, { status: 409 });
 
-  const to = process.env.EMAIL_TEST_RECIPIENT || c.email;
+  const to = testRecipient || c.email;
   const resend = new Resend(apiKey);
   const { data, error } = await resend.emails.send({
     from,
