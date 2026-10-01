@@ -71,6 +71,7 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [dragOver, setDragOver] = useState(false);
+  const [uploadRole, setUploadRole] = useState<Role | "AUTO">("AUTO");
   const fileInput = useRef<HTMLInputElement>(null);
 
   async function upload(files: File[]) {
@@ -86,6 +87,7 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
         update(i, { state: "scoring" });
         const body = new FormData();
         body.append("file", files[i]);
+        if (uploadRole !== "AUTO") body.append("role", uploadRole);
         try {
           const res = await fetch("/api/upload", { method: "POST", body });
           const json = (await res.json()) as { error?: string; score?: number | null; band?: Band | null; role?: string };
@@ -173,8 +175,16 @@ export default function Dashboard({ initial }: { initial: Candidate[] }) {
             <b>Upload CVs</b> for Product Manager or Senior Product Manager (PDF, DOCX, TXT)
           </p>
           <p className="muted small" style={{ margin: "0 0 10px" }}>
-            Personal details are removed before scoring. Every candidate is scored for both roles.
+            Pick the role these CVs applied for (or let the app detect it). Personal details are removed before scoring, and every candidate is scored for both roles.
           </p>
+          <div className="tabs" style={{ justifyContent: "center", margin: "0 0 10px" }} role="radiogroup" aria-label="Role applied for">
+            <span className="small muted" style={{ alignSelf: "center" }}>Role applied for:</span>
+            {(["PM", "SPM", "AUTO"] as const).map((r) => (
+              <button key={r} role="radio" aria-checked={uploadRole === r} aria-pressed={uploadRole === r} onClick={() => setUploadRole(r)}>
+                {r === "AUTO" ? "Auto-detect" : ROLE_TITLES[r]}
+              </button>
+            ))}
+          </div>
           <input
             ref={fileInput}
             type="file"

@@ -73,14 +73,17 @@ export interface ScoredCandidate extends ScoreFields {
  * Steps 1-2 for one CV: extract contact details + anonymise (model), deterministic
  * redaction (code), blind scoring of the anonymised text only (model), points/gate/bands (code).
  */
-export async function scoreCv(fileName: string, cvText: string): Promise<ScoredCandidate> {
+export async function scoreCv(fileName: string, cvText: string, selectedRole?: Role): Promise<ScoredCandidate> {
   const extracted = await extractCandidate(fileName, cvText);
+  // The role Arjun picked at upload wins over the extractor's guess.
+  const roleApplied = selectedRole ?? extracted.role_applied;
+  const roleReason = selectedRole ? "Selected by Arjun at upload." : extracted.role_reason;
   const anonymized = redact(extracted.anonymized_cv, {
     name: extracted.candidate_name,
     email: extracted.email,
     phone: extracted.phone,
   });
-  const scored = await scoreCandidate(anonymized, extracted.role_applied);
+  const scored = await scoreCandidate(anonymized, roleApplied);
   const criteria = toCriteria(scored, anonymized);
 
   return {
@@ -88,8 +91,8 @@ export async function scoreCv(fileName: string, cvText: string): Promise<ScoredC
     candidate_name: extracted.candidate_name,
     email: extracted.email,
     phone: extracted.phone,
-    role_applied: extracted.role_applied,
-    role_reason: extracted.role_reason,
+    role_applied: roleApplied,
+    role_reason: roleReason,
     anonymized_cv: anonymized,
     summary: scored.summary,
     model: MODEL,

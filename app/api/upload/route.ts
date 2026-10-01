@@ -17,6 +17,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
   }
   const name = file.name;
+  const roleField = form.get("role");
+  const selectedRole = roleField === "PM" || roleField === "SPM" ? roleField : undefined;
   if (!ACCEPTED_EXTENSIONS.some((ext) => name.toLowerCase().endsWith(ext))) {
     return NextResponse.json({ error: `Unsupported file: ${name}` }, { status: 400 });
   }
@@ -34,7 +36,7 @@ export async function POST(req: Request) {
 
   try {
     const text = await extractText(name, await file.arrayBuffer());
-    const scored = await scoreCv(name, text);
+    const scored = await scoreCv(name, text, selectedRole);
 
     // UNCLEAR role: stop here. Arjun picks the role on the dashboard, then the brief and drafts are written.
     const drafts = scored.role_applied === "UNCLEAR" ? null : await draftFor(scored, scored.role_applied);

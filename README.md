@@ -12,7 +12,7 @@ an interview brief and drafts an invitation and a rejection for each person. **N
 
 | Stage | What happens | Where |
 |---|---|---|
-| **Trigger** | Arjun uploads one or more CVs (PDF / DOCX / TXT) | `components/Dashboard.tsx` → `POST /api/upload` |
+| **Trigger** | Arjun uploads one or more CVs (PDF / DOCX / TXT) and picks the role applied for (PM / SPM, or Auto-detect) | `components/Dashboard.tsx` → `POST /api/upload` |
 | **Input** | File → plain text | `lib/parse.ts` |
 | **Context** | Rubric v2: six weighted criteria, the (a)+(b) gate, bands, and the two JDs | `RUBRIC.md`, `lib/prompts.ts`, `lib/rubric.ts` |
 | **Processing** | ① Gemini (Flash) pulls out name, email and phone, tags the role (with a reason), and **anonymises** the CV. ② A code-level redaction pass catches anything missed. | `lib/llm.ts`, `lib/redact.ts` |
